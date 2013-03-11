@@ -1,0 +1,13 @@
+numLevels = 2
+fps = 60
+appWidth = 800
+appHeight = 600
+interactionDistance = 96
+tileSize = 8
+imgDialogBG = data/images/dialog_bg.png
+imgInventoryBG = data/images/inventory_bg.png
+imgItemSelected = data/images/item_selected.png
+imgLoading = loading.png
+viewDistFromPlayerX = 350
+viewDistFromPlayerY = 250
+font = Courier New

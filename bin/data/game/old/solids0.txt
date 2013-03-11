@@ -1,0 +1,14 @@
+music = data/music/music.wav
+
+begin B
+class = Button
+image = data/images/start.png
+effect = nextLevel
+
+begin b
+class = Scenery
+image = data/images/bg.png
+boundingBoxWidth = 0
+boundingBoxHeight = 0
+boundingBoxX = 0
+boundingBoxY = 0
