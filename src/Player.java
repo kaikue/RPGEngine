@@ -148,13 +148,14 @@ public class Player extends Actor {
         x = boundingBox.x - boundingBoxOffsetX;
         y = boundingBox.y - boundingBoxOffsetY;
         
-        //select the inventory item, kind of a hack to put in here but whatever #YOLO
-        try {
+        //select the inventory item, kind of a hack to put in here but whatever
+        if(inventorySlot < inventory.size()) {
             inventoryItem = inventory.get(inventorySlot);
         }
-        catch(IndexOutOfBoundsException e) {
+        else {
             inventoryItem = null;
         }
+        
         if(inventoryItem instanceof Weapon) {
             attack = ((Weapon)inventoryItem).attack;
             attack.creator = this;
@@ -175,6 +176,7 @@ public class Player extends Actor {
     }
     
     public Image getAnim(String dir, RPG rpg) {
+        //boolean based animation: for the discerningly lazy programmer
         frame = rpg.animate(frame, 5); //every 5 steps, advance the animation
         if(dir.equals("up")) {
             if(frame) {
@@ -206,7 +208,7 @@ public class Player extends Actor {
     public void draw(Graphics g, RPG rpg) {
         
         if(dir.equals("up")) {
-            if(up) {
+            if(up && !rpg.paused) {
                 //animated! (animPlayerUp)
                 image = getAnim(dir, rpg);
             }
@@ -216,7 +218,7 @@ public class Player extends Actor {
             }
         }
         else if(dir.equals("down")) {
-            if(down) {
+            if(down && !rpg.paused) {
                 //animated! (animPlayerUp)
                 image = getAnim(dir, rpg);
             }
@@ -226,7 +228,7 @@ public class Player extends Actor {
             }
         }
         else if(dir.equals("left")) {
-            if(left) {
+            if(left && !rpg.paused) {
                 //animated! (animPlayerUp)
                 image = getAnim(dir, rpg);
             }
@@ -236,7 +238,7 @@ public class Player extends Actor {
             }
         }
         else if(dir.equals("right")) {
-            if(right) {
+            if(right && !rpg.paused) {
                 //animated! (animPlayerUp)
                 image = getAnim(dir, rpg);
             }

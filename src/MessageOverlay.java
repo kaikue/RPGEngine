@@ -25,18 +25,15 @@ public class MessageOverlay extends Overlay {
     }
     
     public boolean isLast() {
-        //if there's another slide, return false
-        if(nextMessage instanceof MessageOverlay) {
-            return false;
-        }
-        return true;
+        //return whether there is not another slide
+        return nextMessage == null;
     }
     
     public void draw(Graphics g, int viewX, int viewY) {
         super.draw(g, viewX, viewY);
         g.drawImage(speakerImage, x + offset + viewX, y + offset + viewY, null);
         g.setColor(Color.white);
-        g.drawString(message, x + 200 + viewX, y + 50 + viewY); //text wrapping maybe
+        g.drawString(message, x + 200 + viewX, y + 50 + viewY); //text wrapping maybe using rpg.font()
         //perhaps draw parts of message gradually to make text appear over time?
     }
 

@@ -23,15 +23,13 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     Image offscreenImage;
     int tileSize;
     Graphics offscr;
-    //static ArrayList<Solid> allSolids = new ArrayList<Solid>();
-    //ArrayList<Overlay> allOverlays = new ArrayList<Overlay>();
     Image imgDialogBG, imgInventoryBG, imgItemSelected, imgLoading;
     MessageOverlay currentMessage;
     Font font;
     boolean paused;
     boolean loaded;
-    String[] gameData;
-    String[][] solidsData, levelsData;
+    String[] gameData, pauseLevelData, pauseSolidsData;
+    String[][] levelsData, solidsData;
     Hashtable<String, Solid> solidDefs = new Hashtable<String, Solid>();
     Set<String> solidKeys;
     boolean inventoryOpen;
@@ -40,6 +38,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     int viewDistFromPlayerX, viewDistFromPlayerY;
     int numLevels;
     static Level currentLevel;
+    Level prevLevel, pauseScreen;
     ArrayList<Level> levels;
     
     public void init() {
@@ -76,8 +75,10 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             //solidsData[i] = solidsTexts.get(i).split("\\r?\\n");
             //levelsData[i] = levelTexts.get(i).split("\\r?\\n");
             levelsData[i] = readFile("data/game/level" + i + ".txt");
-            solidsData[i] = readFile("data/game/solids" + i + ".txt");
+            solidsData[i] = readFile("data/game/objects" + i + ".txt");
         }
+        pauseLevelData = readFile("data/game/pauselevel.txt");
+        pauseSolidsData = readFile("data/game/pauseobjects.txt");
         
         //do some game initialization stuff
         time = 0;
@@ -112,6 +113,10 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             
             levels.add(level);
         }
+        pauseScreen = new Level(pauseLevelData, this);
+        pauseScreen.learnSolids(pauseSolidsData, this);
+        
+        
         currentLevel = levels.get(0);
         offscreenImage = createImage(currentLevel.width, currentLevel.height);
         offscr = offscreenImage.getGraphics();
@@ -154,6 +159,29 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         offscr = offscreenImage.getGraphics();
         player = currentLevel.player;
         currentLevel.bgMusic.loop();
+    }
+    
+    public void pause() {        
+        currentLevel.bgMusic.stop();
+        prevLevel = currentLevel;
+        currentLevel = pauseScreen;
+        offscreenImage = createImage(currentLevel.width, currentLevel.height);
+        offscr = offscreenImage.getGraphics();
+        player.left = false;
+        player.up = false;
+        player.right = false;
+        player.down = false;
+        player = null;
+        //currentLevel.bgMusic.loop();
+    }
+    
+    public void unpause() {        
+        //currentLevel.bgMusic.stop();
+        currentLevel = prevLevel;
+        offscreenImage = createImage(currentLevel.width, currentLevel.height);
+        offscr = offscreenImage.getGraphics();
+        player = currentLevel.player;
+        //currentLevel.bgMusic.loop();
     }
     
     public MessageOverlay createMessageOverlay(Image portrait, String message, MessageOverlay nextMessage){
@@ -237,7 +265,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         return null;
     }
     
-    public Font getFontFromString(String str, String start) {
+    public static Font getFontFromString(String str, String start) {
         if(str.startsWith(start)) {
             return new Font(str.substring(start.length()), Font.PLAIN, 18);
         }
@@ -286,7 +314,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     public void paint(Graphics g) {
         offscr.setFont(font);
         if(!loaded) {
-            g.drawImage(imgLoading, 0, 0, null); //replace with actual loading image
+            g.drawImage(imgLoading, 0, 0, null);
             offscr.drawString("", 0, 0); //loads the font, I'm not sure how else to do it
             offscr.clearRect(0, 0, appWidth, appHeight);
             loaded = true;
@@ -308,7 +336,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         }
         
         //draw the inventory
-        if(inventoryOpen) {
+        if(inventoryOpen && player != null) {
             ImageIcon invBGIcon = new ImageIcon(imgInventoryBG);
             ImageIcon itemSelectedIcon = new ImageIcon(imgItemSelected);
             int bgY = appHeight - invBGIcon.getIconHeight();
@@ -318,7 +346,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             offscr.drawImage(imgInventoryBG, viewX, viewY + bgY, null);
             offscr.drawImage(imgItemSelected, viewX + selectedX, viewY + bgY + selectedOffsetY, null);
             offscr.drawString("" + player.inventorySlot, viewX, viewY + 100);
-            //draw the items too!
+            //draw the items too
             for(int i = 0; i < player.inventory.size(); i++) {
                 offscr.drawImage(player.inventory.get(i).image, viewX + (itemSelectedIcon.getIconWidth() + selectedOffsetX) * i, viewY + bgY + selectedOffsetY, null);
             }
@@ -332,9 +360,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         if(!paused) {
             if(player != null && currentLevel != null) {
                 //move the player
-                //try {
                 player.move(currentLevel.allSolids, this);
-                //} catch(NullPointerException npe) { ; } //i don't know why this doesn't work at first
             
                 ArrayList<Solid> toRemove = new ArrayList<Solid>();
                 if(currentLevel != null)
@@ -438,7 +464,14 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         switch(e.getKeyCode()) {
         case KeyEvent.VK_ESCAPE:
             //escape
-            System.exit(0);
+            if(currentLevel != pauseScreen) {
+                paused = true;
+                pause();
+            }
+            else {
+                paused = false;
+                unpause();
+            }
             break;
         case KeyEvent.VK_SPACE:
             space();
@@ -711,22 +744,27 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
 
 /*
 Bugs to fix:
-player can still animate in direction that he's facing while MessageOverlay is present
+Holding down space makes constantly flashing and re-interacting MessageOverlays
+    put in keyRelease?
 if moving using WASD, releasing arrow key will stop player
     could have memory of key pressed to move- probably not worth it
-    could also use two separate variables (left = WASDleft and arrowsleft)
+    could also use two separate variables (left = WASDleft || arrowsleft)
 allOverlays does not include currentMessage (i didn't add it)
 Give Items a separate image for inventory appearance?
 Move player selected item choosing from player.move() to keyboard checking part
-Holding down space makes constantly flashing and re-interacting MessageOverlays
 Make weapons fire as fast as possible when space is first pressed?
 Move arraylists of stuff to that class (to add automagically)
 Make NPCs Actors? (so that they can be killed, "showing" them a sword could kill them...)
 Make parsing of .txt's more lenient (stuff can be on any line)
 Fix ConcurrentModificationExceptions (445, 449)
-Remove n shortcut to next level (when ready to release)
-Reduce size of player/NPC bounding box
+Remove n shortcut to next level (when game is finished)
 Temp inventory opening is kinda annoying- just keep it open when number is pressed?
+Player side animation needs improvement
+Loading screen takes too long to load
+Pause screen still doesn't draw
+    Odd behavior with MessageOverlays (draw over pause screen) and inventory (player is paralyzed)
+Fix flickering of objects at top of screen
+SceneryInteractables don't interact
 
 Features to add:
 Inventory
@@ -750,8 +788,10 @@ Real loading screen
 Resolution?
 Animations somehow...
     would involve NPCs and player being told to move wherever
+    "background slideshow"
     could use multiple levels
     could appear on start of level, interaction with SceneryInteractables 
+Make text in MessageOverlays appear over time, also wrap around
 
 
 Classes: (redo this, outdated)

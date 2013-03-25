@@ -1,0 +1,36 @@
+music = data/music/music.wav
+
+begin P
+class = Player
+image = data/images/knightsheetmedium.png
+width = 72
+height = 144
+speed = 4
+sheetOffsetX = 8
+sheetOffsetY = 8
+health = 100
+
+begin B
+class = Scenery
+image = data/images/signlarge.png
+boundingBoxWidth = 96
+boundingBoxHeight = 56
+boundingBoxX = 0
+boundingBoxY = 0
+
+begin S
+class = SceneryInteractable
+image = data/images/statuelarge.png
+boundingBoxWidth = 72
+boundingBoxHeight = 68
+boundingBoxX = 0
+boundingBoxY = 68
+-data/images/knight_portrait.png, It's a statue of the king.
+
+begin b
+class = Scenery
+image = data/images/hallwaybglarge.png
+boundingBoxWidth = 800
+boundingBoxHeight = 176
+boundingBoxX = 0
+boundingBoxY = 0

@@ -1,9 +1,9 @@
-numLevels = 2
+numLevels = 4
 fps = 60
 appWidth = 800
 appHeight = 600
 interactionDistance = 96
-tileSize = 8
+tileSize = 32
 imgDialogBG = data/images/dialog_bg.png
 imgInventoryBG = data/images/inventory_bg.png
 imgItemSelected = data/images/item_selected.png

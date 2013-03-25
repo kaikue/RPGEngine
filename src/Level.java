@@ -3,7 +3,6 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 
-
 public class Level {
     
     int width, height;
@@ -18,8 +17,8 @@ public class Level {
     
     public Level(String[] data, RPG rpg) {
         this.data = data;
-        width = data[0].length() * rpg.tileSize;
-        height = data.length * rpg.tileSize;
+        width = Math.max(data[0].length() * rpg.tileSize, 800);
+        height = Math.max(data.length * rpg.tileSize, 600);
     }
     
     public void learnSolids(String[] solids, RPG rpg) {
@@ -51,6 +50,31 @@ public class Level {
                         int boundingBoxX = RPG.getIntFromString(solids[i+5], "boundingBoxX = ");
                         int boundingBoxY = RPG.getIntFromString(solids[i+6], "boundingBoxY = ");
                         Scenery scenery = new Scenery(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight));
+                        rpg.solidDefs.put(letter, scenery);
+                    }
+                    else if(className.equals("SceneryInteractable")) {
+                        String letter = RPG.getSubstringFromString(solids[i], "begin ");
+                        Image image = rpg.getImageFromString(solids[i+2], "image = ");
+                        int boundingBoxWidth = RPG.getIntFromString(solids[i+3], "boundingBoxWidth = ");
+                        int boundingBoxHeight = RPG.getIntFromString(solids[i+4], "boundingBoxHeight = ");
+                        int boundingBoxX = RPG.getIntFromString(solids[i+5], "boundingBoxX = ");
+                        int boundingBoxY = RPG.getIntFromString(solids[i+6], "boundingBoxY = ");
+                      //find the last message
+                        int currentLine = i+7;
+                        while(solids[currentLine].startsWith("-")) {
+                            currentLine++;
+                        }
+                        currentLine--;
+                        //move upwards
+                        MessageOverlay message = null;
+                        while(solids[currentLine].startsWith("-")) {
+                            String[] line = solids[currentLine].split(", ");
+                            Image img = rpg.getImageFromString(line[0], "-");
+                            String text = line[1];
+                            message = rpg.createMessageOverlay(img, text, message);
+                            currentLine--;
+                        }
+                        Scenery scenery = new SceneryInteractable(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), message);
                         rpg.solidDefs.put(letter, scenery);
                     }
                     else if(className.equals("NPC")) {
@@ -193,7 +217,7 @@ public class Level {
         
         //top border
         if(player != null) {
-            solid = new Scenery(null, -10, -10, new Rectangle(-10, -10, width + 20, 10 + player.height / 2));
+            solid = new Scenery(null, -10, -10, new Rectangle(-10, -10, width + 20, 10 + player.height * 3 / 4));
         }
         else {
             solid = new Scenery(null, -10, -10, new Rectangle(-10, -10, width + 20, 10));
@@ -219,7 +243,7 @@ public class Level {
         
         //draw the solids
         //does not sort allSolids itself (player collision depends on that), but need to draw based on y-order
-        //draw items with lowest y first so they are on under sprites with higher y's
+        //draw items with lowest y first so they are under sprites with higher y's
         ArrayList<Solid> sortedAllSolids = allSolids;
         Collections.sort(sortedAllSolids, new CustomComparator());
         Collections.reverse(sortedAllSolids);
@@ -232,9 +256,10 @@ public class Level {
             else {
             solid.draw(g);
             }
+            
             //debug- draw bounding box
-            g.setColor(Color.BLACK);
-            g.drawRect(solid.boundingBox.x, solid.boundingBox.y, solid.boundingBox.width, solid.boundingBox.height);
+            //g.setColor(Color.BLACK);
+            //g.drawRect(solid.boundingBox.x, solid.boundingBox.y, solid.boundingBox.width, solid.boundingBox.height);
         }
         
         //draw the overlays
