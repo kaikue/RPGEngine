@@ -27,6 +27,15 @@ boundingBoxX = 0
 boundingBoxY = 68
 -data/images/knight_portrait.png, It's a statue of the king.
 
+begin D
+class = LevelWarper
+image = null
+boundingBoxWidth = 80
+boundingBoxHeight = 81
+boundingBoxX = 8
+boundingBoxY = 0
+effect = previousLevel
+
 begin b
 class = Scenery
 image = data/images/hallwaybglarge.png

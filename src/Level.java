@@ -8,8 +8,8 @@ public class Level {
     int width, height;
     String[] data;
     Player player;
-    ArrayList<Solid> allSolids = new ArrayList<Solid>();
-    ArrayList<Overlay> allOverlays = new ArrayList<Overlay>();
+    ArrayList<Solid> allSolids;
+    ArrayList<Overlay> allOverlays;
     Image imgBG;
     public AudioClip bgMusic;
     //Image offscreenImage;
@@ -59,7 +59,7 @@ public class Level {
                         int boundingBoxHeight = RPG.getIntFromString(solids[i+4], "boundingBoxHeight = ");
                         int boundingBoxX = RPG.getIntFromString(solids[i+5], "boundingBoxX = ");
                         int boundingBoxY = RPG.getIntFromString(solids[i+6], "boundingBoxY = ");
-                      //find the last message
+                        //find the last message
                         int currentLine = i+7;
                         while(solids[currentLine].startsWith("-")) {
                             currentLine++;
@@ -74,8 +74,8 @@ public class Level {
                             message = rpg.createMessageOverlay(img, text, message);
                             currentLine--;
                         }
-                        Scenery scenery = new SceneryInteractable(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), message);
-                        rpg.solidDefs.put(letter, scenery);
+                        SceneryInteractable sceneryInteractable = new SceneryInteractable(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), message);
+                        rpg.solidDefs.put(letter, sceneryInteractable);
                     }
                     else if(className.equals("NPC")) {
                         String letter = RPG.getSubstringFromString(solids[i], "begin ");
@@ -158,6 +158,17 @@ public class Level {
                         LevelWarper levelWarper = new LevelWarper(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), effect);
                         rpg.solidDefs.put(letter, levelWarper);
                     }
+                    else if(className.equals("Transparency")) {
+                        String letter = RPG.getSubstringFromString(solids[i], "begin ");
+                        int drawSpaceWidth = RPG.getIntFromString(solids[i+2], "drawSpaceWidth = ");
+                        int drawSpaceHeight = RPG.getIntFromString(solids[i+3], "drawSpaceHeight = ");
+                        int boundingBoxWidth = RPG.getIntFromString(solids[i+4], "boundingBoxWidth = ");
+                        int boundingBoxHeight = RPG.getIntFromString(solids[i+5], "boundingBoxHeight = ");
+                        int boundingBoxX = RPG.getIntFromString(solids[i+6], "boundingBoxX = ");
+                        int boundingBoxY = RPG.getIntFromString(solids[i+7], "boundingBoxY = ");
+                        Transparency transparency = new Transparency(new Rectangle(0, 0, drawSpaceWidth, drawSpaceHeight), new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight));
+                        rpg.solidDefs.put(letter, transparency);
+                    }
                     //more object types...
                 }
             }
@@ -167,9 +178,11 @@ public class Level {
     
     public void createObjects(RPG rpg) {
         //create & position the objects
+        allSolids = new ArrayList<Solid>();
+        allOverlays = new ArrayList<Overlay>();
+        
         String letter;
         Solid solid;
-        
         for(int i = 0; i < data.length; i++) {
             for(int j = 0; j < data[i].length(); j++) {
                 letter = String.valueOf(data[i].charAt(j));
@@ -186,6 +199,14 @@ public class Level {
                     else if(solid instanceof NPC) {
                         NPC npc = new NPC(solid.image, j * rpg.tileSize, i * rpg.tileSize, ((NPC)solid).overlay);
                         allSolids.add(npc);
+                    }
+                    else if(solid instanceof SceneryInteractable) {
+                        SceneryInteractable sceneryInteractable = new SceneryInteractable(solid.image, j * rpg.tileSize, i * rpg.tileSize, new Rectangle(solid.boundingBox.x + j * rpg.tileSize, solid.boundingBox.y + i * rpg.tileSize, solid.boundingBox.width, solid.boundingBox.height), ((SceneryInteractable)solid).overlay);
+                        allSolids.add(sceneryInteractable);
+                    }
+                    else if(solid instanceof Transparency) {
+                        Transparency transparency = new Transparency(new Rectangle(j * rpg.tileSize, i * rpg.tileSize, ((Transparency)solid).drawSpace.width, ((Transparency)solid).drawSpace.height), new Rectangle(solid.boundingBox.x + j * rpg.tileSize, solid.boundingBox.y + i * rpg.tileSize, solid.boundingBox.width, solid.boundingBox.height));
+                        allSolids.add(transparency);
                     }
                     else if(solid instanceof Weapon) {
                         Weapon weapon = new Weapon(((Weapon)solid).image, j * rpg.tileSize, i * rpg.tileSize, new Rectangle(solid.boundingBox.x + j * rpg.tileSize, solid.boundingBox.y + i * rpg.tileSize, solid.boundingBox.width, solid.boundingBox.height), ((Weapon)solid).attack, ((Weapon)solid).rate);
@@ -238,7 +259,7 @@ public class Level {
     }
     
     public void draw(Graphics g, int x, int y, RPG rpg) {
-        
+        System.out.println("Level draw");
         g.drawImage(imgBG, 0, 0, null);
         
         //draw the solids
@@ -253,17 +274,20 @@ public class Level {
             if(solid instanceof Player) {
                 ((Player)solid).draw(g, rpg);
             }
+            else if(solid instanceof Transparency) {
+                ((Transparency)solid).draw(g, rpg);
+            }
             else {
-            solid.draw(g);
+                solid.draw(g);
             }
             
-            //debug- draw bounding box
-            //g.setColor(Color.BLACK);
-            //g.drawRect(solid.boundingBox.x, solid.boundingBox.y, solid.boundingBox.width, solid.boundingBox.height);
+            //debug- draw bounding boxes
+            g.setColor(Color.BLACK);
+            g.drawRect(solid.boundingBox.x, solid.boundingBox.y, solid.boundingBox.width, solid.boundingBox.height);
         }
         
         //draw the overlays
-        //maybe sort these???
+        //maybe sort these?
         Overlay overlay;
         for(int i = 0; i < allOverlays.size(); i++) {
             overlay = allOverlays.get(i);

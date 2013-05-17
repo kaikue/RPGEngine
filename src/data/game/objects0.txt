@@ -5,6 +5,15 @@ class = Button
 image = data/images/start.png
 effect = nextLevel
 
+begin T
+class = Transparency
+drawSpaceWidth = 128
+drawSpaceHeight = 128
+boundingBoxWidth = 0
+boundingBoxHeight = 0
+boundingBoxX = 0
+boundingBoxY = 0
+
 begin b
 class = Scenery
 image = data/images/loading.png

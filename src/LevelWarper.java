@@ -15,7 +15,8 @@ public class LevelWarper extends Scenery {
         if(effect.equals("nextLevel")) {
             rpg.nextLevel();
         }
+        else if(effect.equals("previousLevel")) {
+            rpg.previousLevel();
+        }
     }
-    
-    //draw?
 }

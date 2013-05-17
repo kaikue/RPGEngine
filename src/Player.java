@@ -1,11 +1,10 @@
 import java.awt.*;
 import java.util.ArrayList;
-
 import javax.swing.ImageIcon;
 
 
 public class Player extends Actor {
-
+    
     int nextX, nextY;
     int width, height;
     int boundingBoxOffsetX, boundingBoxOffsetY;
@@ -208,42 +207,42 @@ public class Player extends Actor {
     public void draw(Graphics g, RPG rpg) {
         
         if(dir.equals("up")) {
-            if(up && !rpg.paused) {
-                //animated! (animPlayerUp)
+            if(up && rpg.gameState == RPG.EXPLORING) {
+                //animated
                 image = getAnim(dir, rpg);
             }
             else {
-                //not animated. (imgPlayerUp)
+                //not animated
                 image = imgUp;
             }
         }
         else if(dir.equals("down")) {
-            if(down && !rpg.paused) {
-                //animated! (animPlayerUp)
+            if(down && rpg.gameState == RPG.EXPLORING) {
+                //animated
                 image = getAnim(dir, rpg);
             }
             else {
-                //not animated. (imgPlayerUp)
+                //not animated
                 image = imgDown;
             }
         }
         else if(dir.equals("left")) {
-            if(left && !rpg.paused) {
-                //animated! (animPlayerUp)
+            if(left && rpg.gameState == RPG.EXPLORING) {
+                //animated
                 image = getAnim(dir, rpg);
             }
             else {
-                //not animated. (imgPlayerUp)
+                //not animated
                 image = imgLeft;
             }
         }
         else if(dir.equals("right")) {
-            if(right && !rpg.paused) {
-                //animated! (animPlayerUp)
+            if(right && rpg.gameState == RPG.EXPLORING) {
+                //animated
                 image = getAnim(dir, rpg);
             }
             else {
-                //not animated. (imgPlayerUp)
+                //not animated
                 image = imgRight;
             }
         }

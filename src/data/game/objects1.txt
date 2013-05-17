@@ -26,6 +26,15 @@ boundingBoxHeight = 240
 boundingBoxX = 0
 boundingBoxY = 0
 
+begin W
+class = LevelWarper
+image = data/images/knightroomwalllarge.png
+boundingBoxWidth = 80
+boundingBoxHeight = 40
+boundingBoxX = 608
+boundingBoxY = 176
+effect = nextLevel
+
 begin b
 class = Scenery
 image = data/images/knightroombglarge.png
@@ -33,3 +42,19 @@ boundingBoxWidth = 800
 boundingBoxHeight = 224
 boundingBoxX = 0
 boundingBoxY = 0
+
+begin S
+class = Weapon
+image = data/images/sword1.png
+boundingBoxWidth = 114
+boundingBoxHeight = 42
+boundingBoxX = 0
+boundingBoxY = 0
+type = Melee
+attackImage = data/images/sword1.png
+attackBBW = 114
+attackBBH = 42
+attackBBX = 0
+attackBBY = 0
+attackSpeed = 0
+attackDamage = 20
