@@ -12,8 +12,6 @@ public class Level {
     ArrayList<Overlay> allOverlays;
     Image imgBG;
     public AudioClip bgMusic;
-    //Image offscreenImage;
-    //Graphics offscr;
     
     public Level(String[] data, RPG rpg) {
         this.data = data;
@@ -127,16 +125,16 @@ public class Level {
                         int boundingBoxX = RPG.getIntFromString(solids[i+5], "boundingBoxX = ");
                         int boundingBoxY = RPG.getIntFromString(solids[i+6], "boundingBoxY = ");
                         int rate = RPG.getIntFromString(solids[i+7], "rate = ");
-                        //attack stuff
                         Image attackImage = rpg.getImageFromString(solids[i+8], "attackImage = ");
                         int attackBBW = RPG.getIntFromString(solids[i+9], "attackBBW = ");
                         int attackBBH = RPG.getIntFromString(solids[i+10], "attackBBH = ");
                         int attackBBX = RPG.getIntFromString(solids[i+11], "attackBBX = ");
                         int attackBBY = RPG.getIntFromString(solids[i+12], "attackBBY = ");
                         int attackSpeed = RPG.getIntFromString(solids[i+13], "attackSpeed = ");
-                        int attackDamage = RPG.getIntFromString(solids[i+14], "attackDamage = ");
+                        int attackAge = RPG.getIntFromString(solids[i+14], "attackAge = ");
+                        int attackDamage = RPG.getIntFromString(solids[i+15], "attackDamage = ");
                         int[] attackVelocity = {0, 0};
-                        Attack attack = new Attack(attackImage, 0, 0, new Rectangle(attackBBX, attackBBY, attackBBW, attackBBH), attackVelocity, attackSpeed, attackDamage, null);
+                        Attack attack = new Attack(attackImage, 0, 0, new Rectangle(attackBBX, attackBBY, attackBBW, attackBBH), attackVelocity, attackSpeed, attackAge, attackDamage, null);
                         Weapon weapon = new Weapon(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), attack, rate);
                         rpg.solidDefs.put(letter, weapon);
                     }
@@ -259,7 +257,6 @@ public class Level {
     }
     
     public void draw(Graphics g, int x, int y, RPG rpg) {
-        System.out.println("Level draw");
         g.drawImage(imgBG, 0, 0, null);
         
         //draw the solids

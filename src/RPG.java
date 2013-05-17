@@ -14,9 +14,10 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     static final long serialVersionUID = 1L;
     static final int LOADING = -1;
     static final int MENU = 0;
-    static final int PAUSESCREEN = 1;
-    static final int EXPLORING = 2;
-    static final int EXPLOREPAUSED = 3;
+    static final int PAUSE = 1;
+    static final int GAME = 2;
+    static final int TALK = 3;
+    static final int INVENTORY = 4;
     
     long time;
     int fps;
@@ -36,18 +37,15 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     String[][] levelsData, solidsData;
     Hashtable<String, Solid> solidDefs = new Hashtable<String, Solid>();
     Set<String> solidKeys;
-    boolean inventoryOpen;
-    int inventoryTimer;
     int viewX, viewY;
     int viewDistFromPlayerX, viewDistFromPlayerY;
     int numLevels;
     static Level currentLevel;
     Level prevLevel, pauseScreen;
     ArrayList<Level> levels;
-    boolean wasdLeft, wasdRight, wasdUp, wasdDown, arrowsLeft, arrowsRight, arrowsUp, arrowsDown;
+    boolean[] wasdKeys, arrowKeys;
     BufferedImage capture;
     Point pos;
-    //CombatScreen combatScreen;
     
     public void init() {
         
@@ -102,8 +100,8 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         
         time = 0;
         gameState = LOADING;
-        inventoryOpen = false;
-        inventoryTimer = -1;
+        wasdKeys = new boolean[4];
+        arrowKeys = new boolean[4];
         viewX = viewY = 0;
         setSize(appWidth, appHeight);
         
@@ -149,14 +147,13 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         if(player == null) {
             return;
         }
-        if(gameState == EXPLOREPAUSED) {
-            if(inventoryOpen) {
-                gameState = EXPLORING;
-                inventoryOpen = false;
-            }
-            else if(!currentMessage.equals(null)) {
+        if(gameState == INVENTORY) {
+            gameState = GAME;
+        }
+        else if(gameState == TALK) {
+            if(!currentMessage.equals(null)) {
                 if(currentMessage.isLast()) {
-                    gameState = EXPLORING;
+                    gameState = GAME;
                 }
                 currentMessage = currentMessage.nextMessage;
             }
@@ -198,13 +195,13 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             gameState = MENU;
         }
         else {
-            gameState = EXPLORING;
+            gameState = GAME;
         }
     }
     
     public void pause() {
         prevState = gameState;
-        gameState = PAUSESCREEN;
+        gameState = PAUSE;
         currentLevel.bgMusic.stop();
         prevLevel = currentLevel;
         currentLevel = pauseScreen;
@@ -242,7 +239,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             s = currentLevel.allSolids.get(i);
             if(s instanceof SceneryInteractable && player.distanceTo(s) < interactionDistance) {
                 interactable = (SceneryInteractable)s;
-                gameState = EXPLOREPAUSED;
+                gameState = TALK;
                 currentMessage = interactable.overlay;
                 return;
             }
@@ -332,6 +329,22 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         return b.getSubimage(x, y, imgWidth, imgHeight);
     }
     
+    public void invSelect(int index, boolean unpause) {
+        if(gameState == GAME) {
+            gameState = INVENTORY;
+            player.inventorySlot = index;
+        }
+        else if(gameState == INVENTORY) {
+            player.inventorySlot = index;
+            if(unpause) {
+                gameState = GAME;
+            }
+        }
+        player.inventorySlot = (player.inventorySlot + 10) % 10; //need to add 10 in case it has gone to -1 (in which case you want 9)
+        
+        player.updateHeldItem();
+    }
+    
     public boolean animate(boolean frame, int animSpeed) {
         //this works for two-frame animations only
         if(time % (fps / animSpeed) == 0) {
@@ -348,7 +361,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
               try {
                   Thread.sleep(1000/fps);
               }
-              catch(ArithmeticException e) { ; } //i don't know why this doesn't work at first
+              catch(ArithmeticException e) { ; } //I don't know why this doesn't work at first
               catch (InterruptedException e) { ; }
           }
     }
@@ -366,7 +379,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             currentLevel.draw(offscr, -viewX, -viewY, this);
         }
         
-        else if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
+        else if(gameState == GAME || gameState == TALK || gameState == INVENTORY) {
             currentLevel.draw(offscr, -viewX, -viewY, this);
             //draw the player's health
             offscr.setColor(Color.RED);
@@ -380,7 +393,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             }
             
             //draw the inventory
-            if(inventoryOpen) {
+            if(gameState == INVENTORY) {
                 ImageIcon invBGIcon = new ImageIcon(imgInventoryBG);
                 ImageIcon itemSelectedIcon = new ImageIcon(imgItemSelected);
                 int bgY = appHeight - invBGIcon.getIconHeight();
@@ -389,7 +402,6 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
                 int selectedX = player.inventorySlot * (itemSelectedIcon.getIconWidth() + selectedOffsetX);
                 offscr.drawImage(imgInventoryBG, viewX, viewY + bgY, null);
                 offscr.drawImage(imgItemSelected, viewX + selectedX, viewY + bgY + selectedOffsetY, null);
-                offscr.drawString("" + player.inventorySlot, viewX, viewY + 100);
                 //draw the items too
                 for(int i = 0; i < player.inventory.size(); i++) {
                     offscr.drawImage(player.inventory.get(i).image, viewX + (itemSelectedIcon.getIconWidth() + selectedOffsetX) * i, viewY + bgY + selectedOffsetY, null);
@@ -403,14 +415,14 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     public void update(Graphics g) {
         time++;
         pos = getLocationOnScreen();
-        if(gameState == EXPLORING) {
+        if(gameState == GAME) {
             //move the player
             player.move(currentLevel.allSolids, this);
             
             ArrayList<Solid> toRemove = new ArrayList<Solid>();
             if(currentLevel != null)
                 for(Solid solid : currentLevel.allSolids) {     //sometimes throws ConcurrentModificationException?
-                    //update the solids (only used for bullet movement right now)
+                    //update the solids (only used for Attacks right now)
                     solid.update();
                     //check if the solid is hit by an attack
                     for(Attack attack : Attack.allAttacks) {    //sometimes throws ConcurrentModificationException
@@ -457,16 +469,6 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             }
         }
         
-        //inventory timer- TODO remove this
-        if(inventoryTimer > 0) {
-            inventoryTimer--;
-        }
-        else if(inventoryTimer == 0){
-            inventoryOpen = false;
-            inventoryTimer = -1;
-            //paused = false;
-        }
-        
         paint(g);
     }
     
@@ -504,10 +506,10 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         switch(e.getKeyCode()) {
         case KeyEvent.VK_ESCAPE:
             //escape
-            if(gameState == EXPLORING) {
+            if(gameState == GAME || gameState == TALK || gameState == INVENTORY) {
                 pause();
             }
-            else {
+            else if(gameState == PAUSE) {
                 unpause();
             }
             break;
@@ -516,93 +518,79 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             break;
         case KeyEvent.VK_E:
             //if the subinventory is open, close it
-            if(gameState == EXPLOREPAUSED) {
-                gameState = EXPLORING;
-                inventoryOpen = false;
+            if(gameState == INVENTORY) {
+                gameState = GAME;
             }
-            else if(gameState == EXPLORING) {
-                gameState = EXPLOREPAUSED;
-                inventoryOpen = true;
+            else if(gameState == GAME) {
+                gameState = INVENTORY;
             }
             break;
         case KeyEvent.VK_W:
-            if(gameState == EXPLOREPAUSED && inventoryOpen) {
+            if(gameState == INVENTORY) {
                 //open the sub-inventory or navigate within it
             }
             else {
-                wasdUp = true;
+                wasdKeys[0] = true;
             }
             break;
         case KeyEvent.VK_S:
-            if(gameState == EXPLOREPAUSED && inventoryOpen) {
+            if(gameState == INVENTORY) {
                 //navigate within the sub-inventory
             }
             else {
-                wasdDown = true;
+                wasdKeys[1] = true;
             }
             break;
         case KeyEvent.VK_A:
-            if(gameState == EXPLOREPAUSED && inventoryOpen) {
+            if(gameState == INVENTORY) {
                 //if the subinventory is open, move within it, else
-                player.inventorySlot--;
-                if(player.inventorySlot < 0) {
-                    player.inventorySlot = 9;
-                }
+                invSelect(player.inventorySlot - 1, false);
             }
             else {
-                wasdLeft = true;
+                wasdKeys[2] = true;
             }
             break;
         case KeyEvent.VK_D:
-            if(gameState == EXPLOREPAUSED && inventoryOpen) {
+            if(gameState == INVENTORY) {
                 //if the subinventory is open, move within it, else
-                player.inventorySlot++;
-                if(player.inventorySlot > 9) {
-                    player.inventorySlot = 0;
-                }
+                invSelect(player.inventorySlot + 1, false);
             }
             else {
-                wasdRight = true;
+                wasdKeys[3] = true;
             }
             break;
         case KeyEvent.VK_UP:
-            if(gameState == EXPLOREPAUSED && inventoryOpen) {
+            if(gameState == INVENTORY) {
                 //open the sub-inventory or navigate within it
             }
             else {
-                arrowsUp = true;
+                arrowKeys[0] = true;
             }
             break;
         case KeyEvent.VK_DOWN:
-            if(gameState == EXPLOREPAUSED && inventoryOpen) {
+            if(gameState == INVENTORY) {
                 //navigate within the sub-inventory
             }
             else {
-                arrowsDown = true;
+                arrowKeys[1] = true;
             }
             break;
         case KeyEvent.VK_LEFT:
-            if(gameState == EXPLOREPAUSED && inventoryOpen) {
+            if(gameState == INVENTORY) {
                 //if the subinventory is open, move within it, else
-                player.inventorySlot--;
-                if(player.inventorySlot < 0) {
-                    player.inventorySlot = 9;
-                }
+                invSelect(player.inventorySlot - 1, false);
             }
             else {
-                arrowsLeft = true;
+                arrowKeys[2] = true;
             }
             break;
         case KeyEvent.VK_RIGHT:
-            if(gameState == EXPLOREPAUSED && inventoryOpen) {
+            if(gameState == INVENTORY) {
                 //if the subinventory is open, move within it, else
-                player.inventorySlot++;
-                if(player.inventorySlot > 9) {
-                    player.inventorySlot = 0;
-                }
+                invSelect(player.inventorySlot + 1, false);
             }
             else {
-                arrowsRight = true;
+                arrowKeys[3] = true;
             }
             break;
         case KeyEvent.VK_N:
@@ -612,158 +600,81 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             previousLevel();
             break;
         case KeyEvent.VK_1:
-            //1
-            if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
-                player.inventorySlot = 0;
-                if(!inventoryOpen) {
-                    //paused = true;
-                    inventoryOpen = true;
-                    //TODO remove inventory timer
-                    inventoryTimer = 30;
-                }
-            }
+            invSelect(0, true);
             break;
         case KeyEvent.VK_2:
-            //2
-            if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
-                player.inventorySlot = 1;
-                if(!inventoryOpen) {
-                    //paused = true;
-                    inventoryOpen = true;
-                    inventoryTimer = 30;
-                }
-            }
+            invSelect(1, true);
             break;
         case KeyEvent.VK_3:
-            if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
-                player.inventorySlot = 2;
-                if(!inventoryOpen) {
-                    //paused = true;
-                    inventoryOpen = true;
-                    inventoryTimer = 30;
-                }
-            }
+            invSelect(2, true);
             break;
         case KeyEvent.VK_4:
-            if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
-                player.inventorySlot = 3;
-                if(!inventoryOpen) {
-                    //paused = true;
-                    inventoryOpen = true;
-                    inventoryTimer = 30;
-                }
-            }
+            invSelect(3, true);
             break;
         case KeyEvent.VK_5:
-            if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
-                player.inventorySlot = 4;
-                if(!inventoryOpen) {
-                    //paused = true;
-                    inventoryOpen = true;
-                    inventoryTimer = 30;
-                }
-            }
+            invSelect(4, true);
             break;
         case KeyEvent.VK_6:
-            if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
-                player.inventorySlot = 5;
-                if(!inventoryOpen) {
-                    //paused = true;
-                    inventoryOpen = true;
-                    inventoryTimer = 30;
-                }
-            }
+            invSelect(5, true);
             break;
         case KeyEvent.VK_7:
-            if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
-                player.inventorySlot = 6;
-                if(!inventoryOpen) {
-                    //paused = true;
-                    inventoryOpen = true;
-                    inventoryTimer = 30;
-                }
-            }
+            invSelect(6, true);
             break;
         case KeyEvent.VK_8:
-            if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
-                player.inventorySlot = 7;
-                if(!inventoryOpen) {
-                    //paused = true;
-                    inventoryOpen = true;
-                    inventoryTimer = 30;
-                }
-            }
+            invSelect(7, true);
             break;
         case KeyEvent.VK_9:
-            //9
-            if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
-                player.inventorySlot = 8;
-                if(!inventoryOpen) {
-                    //paused = true;
-                    inventoryOpen = true;
-                    inventoryTimer = 30;
-                }
-            }
+            invSelect(8, true);
             break;
         case KeyEvent.VK_0:
-            //0
-            if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
-                player.inventorySlot = 9;
-                if(!inventoryOpen) {
-                    //paused = true;
-                    inventoryOpen = true;
-                    inventoryTimer = 30;
-                }
-            }
+            invSelect(9, true);
             break;
         default:
             break;
         }
-        if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
-            player.up = wasdUp || arrowsUp;
-            player.down = wasdDown || arrowsDown;
-            player.left = wasdLeft || arrowsLeft;
-            player.right = wasdRight || arrowsRight;
+        if(gameState == GAME || gameState == TALK || gameState == INVENTORY) {
+            player.up = wasdKeys[0] || arrowKeys[0];
+            player.down = wasdKeys[1] || arrowKeys[1];
+            player.left = wasdKeys[2] || arrowKeys[2];
+            player.right = wasdKeys[3] || arrowKeys[3];
         }
-        //put inventory swapping stuff here I guess
-        
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
         switch(e.getKeyCode()) {
         case KeyEvent.VK_W:
-            wasdUp = false;
+            wasdKeys[0] = false;
             break;
         case KeyEvent.VK_S:
-            wasdDown = false;
+            wasdKeys[1] = false;
             break;
         case KeyEvent.VK_A:
-            wasdLeft = false;
+            wasdKeys[2] = false;
             break;
         case KeyEvent.VK_D:
-            wasdRight = false;
+            wasdKeys[3] = false;
             break;
         case KeyEvent.VK_UP:
-            arrowsUp = false;
+            arrowKeys[0] = false;
             break;
         case KeyEvent.VK_DOWN:
-            arrowsDown = false;
+            arrowKeys[1] = false;
             break;
         case KeyEvent.VK_LEFT:
-            arrowsLeft = false;
+            arrowKeys[2] = false;
             break;
         case KeyEvent.VK_RIGHT:
-            arrowsRight = false;
+            arrowKeys[3] = false;
             break;
         default:
             break;
         }
-        if(gameState == EXPLORING) {
-            player.up = wasdUp || arrowsUp;
-            player.down = wasdDown || arrowsDown;
-            player.left = wasdLeft || arrowsLeft;
-            player.right = wasdRight || arrowsRight;
+        if(gameState == GAME || gameState == TALK || gameState == INVENTORY) {
+            player.up = wasdKeys[0] || arrowKeys[0];
+            player.down = wasdKeys[1] || arrowKeys[1];
+            player.left = wasdKeys[2] || arrowKeys[2];
+            player.right = wasdKeys[3] || arrowKeys[3];
         }
     }
 
@@ -778,22 +689,23 @@ Bugs to fix:
 Holding down space makes constantly flashing and re-interacting MessageOverlays
     put in keyRelease?
 allOverlays does not include currentMessage (I didn't add it)
-Move player selected item choosing from player.move() to keyboard checking part
-Make weapons fire as fast as possible when space is first pressed?
-Move arraylists of stuff to that class (to add automagically)
+Make weapons fire as fast as possible when space is first pressed
 Make NPCs Actors? (so that they can be killed, "showing" them a sword could kill them...)
 Fix ConcurrentModificationExceptions (445, 449)
-Remove n shortcut to next level (when game is finished)
-Temp inventory opening is kinda annoying- just keep it open when number is pressed
+Remove n and b shortcuts to levels (when game is finished)
 Player side animation needs improvement
 Loading screen takes too long to load
-Pause screen still doesn't draw
-    Odd behavior with MessageOverlays (draw over pause screen) and inventory (player is paralyzed)
+Pause screen doesn't draw
+    May just be due to lack of content
 Level-switching issues
     player's position is not reset- regenerate objects
     viewport sometimes shows part of old level (boundary issues)
     using the previousLevel door then n brings you back to start with a NullPointerException
 Player draws on top when at very bottom
+Rate should be at least age to prevent multiple melee weapons
+Remove:
+    Attack.allAttacks
+    Item.isWeapon
 
 Features to add:
 Inventory
@@ -823,9 +735,6 @@ Cutscenes somehow...
     could appear on start of level, interaction with SceneryInteractables 
 Make text in MessageOverlays appear over time, also wrap around
 Make parsing of .txt's more lenient (stuff can be on any line)
-Combat
-    Left- block, right- attack
-    Up, mid, down positions
 
 Classes: (redo this, outdated)
 RPG: the game itself
@@ -845,5 +754,4 @@ Overlay: gets drawn above the solids (ex: fog)                                  
     note: just using solids w/out boundingbox is easier if you don't need them to be on top
     MessageOverlay: shows a portrait and some text (ex: dialogue)
 CustomComparator: for sorting based on y-position, don't forget to reverse the sorted ArrayList
-CombatScreen: for EPIC DUELING
 */

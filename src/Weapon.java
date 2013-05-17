@@ -11,7 +11,7 @@ public class Weapon extends Item {
         super(image, x, y, boundingBox);
         this.attack = attack;
         this.rate = rate;
-        this.isWeapon = true;
+        this.isWeapon = true; //this really should not be necessary, remove this sometime
     }
     
     public void fire(Actor actor) {
@@ -32,7 +32,7 @@ public class Weapon extends Item {
             attackVelocity[0] = 0;
             attackVelocity[1] = 1;
         }
-        actor.attack = new Attack(this.attack.image, actor.x, actor.y, new Rectangle(this.attack.boundingBox.x + actor.x, this.attack.boundingBox.y + actor.y, this.attack.boundingBox.width, this.attack.boundingBox.height), attackVelocity, this.attack.speed, this.attack.damage, actor);
+        actor.attack = new Attack(this.attack.image, actor.x, actor.y, new Rectangle(this.attack.boundingBox.x + actor.x, this.attack.boundingBox.y + actor.y, this.attack.boundingBox.width, this.attack.boundingBox.height), attackVelocity, this.attack.speed, this.attack.age, this.attack.damage, actor);
     }
 
 }

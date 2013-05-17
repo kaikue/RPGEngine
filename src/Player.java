@@ -146,8 +146,16 @@ public class Player extends Actor {
         //move the player
         x = boundingBox.x - boundingBoxOffsetX;
         y = boundingBox.y - boundingBoxOffsetY;
-        
-        //select the inventory item, kind of a hack to put in here but whatever
+    }
+    
+    public void collect(Item item) {
+        inventory.add(item);
+        RPG.currentLevel.allSolids.remove(item);
+        updateHeldItem();
+        //maybe play a sound?
+    }
+    
+    public void updateHeldItem() {
         if(inventorySlot < inventory.size()) {
             inventoryItem = inventory.get(inventorySlot);
         }
@@ -162,12 +170,6 @@ public class Player extends Actor {
         else {
             attack = null;
         }
-    }
-    
-    public void collect(Item item) {
-        inventory.add(item);
-        RPG.currentLevel.allSolids.remove(item);
-        //maybe play a sound?
     }
     
     public Image splitImage(int imgIndex) {
@@ -207,7 +209,7 @@ public class Player extends Actor {
     public void draw(Graphics g, RPG rpg) {
         
         if(dir.equals("up")) {
-            if(up && rpg.gameState == RPG.EXPLORING) {
+            if(up && rpg.gameState == RPG.GAME) {
                 //animated
                 image = getAnim(dir, rpg);
             }
@@ -217,7 +219,7 @@ public class Player extends Actor {
             }
         }
         else if(dir.equals("down")) {
-            if(down && rpg.gameState == RPG.EXPLORING) {
+            if(down && rpg.gameState == RPG.GAME) {
                 //animated
                 image = getAnim(dir, rpg);
             }
@@ -227,7 +229,7 @@ public class Player extends Actor {
             }
         }
         else if(dir.equals("left")) {
-            if(left && rpg.gameState == RPG.EXPLORING) {
+            if(left && rpg.gameState == RPG.GAME) {
                 //animated
                 image = getAnim(dir, rpg);
             }
@@ -237,7 +239,7 @@ public class Player extends Actor {
             }
         }
         else if(dir.equals("right")) {
-            if(right && rpg.gameState == RPG.EXPLORING) {
+            if(right && rpg.gameState == RPG.GAME) {
                 //animated
                 image = getAnim(dir, rpg);
             }
@@ -246,10 +248,7 @@ public class Player extends Actor {
                 image = imgRight;
             }
         }
-        
-        //g.drawString(dir, 0, 10);
         g.drawImage(image, x, y, null);
-        
     }
-
+    
 }
