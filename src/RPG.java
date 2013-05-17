@@ -17,8 +17,6 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     static final int PAUSESCREEN = 1;
     static final int EXPLORING = 2;
     static final int EXPLOREPAUSED = 3;
-    static final int COMBAT = 4;
-    static final int COMBATPAUSED = 5;
     
     long time;
     int fps;
@@ -371,10 +369,10 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         else if(gameState == EXPLORING || gameState == EXPLOREPAUSED) {
             currentLevel.draw(offscr, -viewX, -viewY, this);
             //draw the player's health
-            //offscr.setColor(Color.RED);
-            //offscr.fillRect(10 + viewX, 10 + viewY, 100, 20);
-            //offscr.setColor(Color.GREEN);
-            //offscr.fillRect(10 + viewX, 10 + viewY, (int)(100.0 * player.health / player.maxHealth), 20);
+            offscr.setColor(Color.RED);
+            offscr.fillRect(10 + viewX, 10 + viewY, 100, 20);
+            offscr.setColor(Color.GREEN);
+            offscr.fillRect(10 + viewX, 10 + viewY, (int)(100.0 * player.health / player.maxHealth), 20);
             
             //draw the current MessageOverlay if it exists
             if(currentMessage != null) {
@@ -398,10 +396,6 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
                 }
             }
         }
-        
-        //else if(gameState == COMBAT || gameState == COMBATPAUSED) {
-        //    combatScreen.draw(offscr, this);
-        //}
         
         g.drawImage(offscreenImage, -viewX, -viewY, null);
     }
@@ -463,9 +457,6 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             }
         }
         
-        //else if(gameState == COMBAT) {
-        //    combatScreen.update();
-        //}
         //inventory timer- TODO remove this
         if(inventoryTimer > 0) {
             inventoryTimer--;
@@ -513,7 +504,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         switch(e.getKeyCode()) {
         case KeyEvent.VK_ESCAPE:
             //escape
-            if(gameState == EXPLORING || gameState == COMBAT) {
+            if(gameState == EXPLORING) {
                 pause();
             }
             else {
@@ -725,13 +716,6 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
                 }
             }
             break;
-        /*case KeyEvent.VK_Q:
-            if(gameState == EXPLORING) {
-                gameState = COMBAT;
-                combatScreen = new CombatScreen(this);
-            }
-            break;
-        */
         default:
             break;
         }
@@ -741,57 +725,6 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             player.left = wasdLeft || arrowsLeft;
             player.right = wasdRight || arrowsRight;
         }
-        /*else if(gameState == COMBAT) {
-            if(combatScreen.onePlayer) {
-                //move the player with WASD or arrow keys
-                combatScreen.playerPos[0] = 0;
-                combatScreen.playerPos[1] = 0;
-                if(wasdLeft || arrowsLeft) {
-                    combatScreen.playerPos[0]--;
-                }
-                if(wasdRight || arrowsRight) {
-                    combatScreen.playerPos[0]++;
-                }
-                if(wasdUp || arrowsUp) {
-                    combatScreen.playerPos[1]--;
-                }
-                if(wasdDown || arrowsDown) {
-                    combatScreen.playerPos[1]++;
-                }
-            }
-            else {
-                //move the player (player 1) with WASD
-                combatScreen.playerPos[0] = 0;
-                combatScreen.playerPos[1] = 0;
-                if(wasdLeft) {
-                    combatScreen.playerPos[0]--;
-                }
-                if(wasdRight) {
-                    combatScreen.playerPos[0]++;
-                }
-                if(wasdUp) {
-                    combatScreen.playerPos[1]--;
-                }
-                if(wasdDown) {
-                    combatScreen.playerPos[1]++;
-                }
-                //move the enemy (player 2) with arrow keys
-                combatScreen.enemyPos[0] = 0;
-                combatScreen.enemyPos[1] = 0;
-                if(arrowsLeft) {
-                    combatScreen.enemyPos[0]++;
-                }
-                if(arrowsRight) {
-                    combatScreen.enemyPos[0]--;
-                }
-                if(arrowsUp) {
-                    combatScreen.enemyPos[1]--;
-                }
-                if(arrowsDown) {
-                    combatScreen.enemyPos[1]++;
-                }
-            }
-        }*/
         //put inventory swapping stuff here I guess
         
     }
@@ -832,57 +765,6 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             player.left = wasdLeft || arrowsLeft;
             player.right = wasdRight || arrowsRight;
         }
-        /*else if(gameState == COMBAT) {
-            if(combatScreen.onePlayer) {
-                //move the player with WASD or arrow keys
-                combatScreen.playerPos[0] = 0;
-                combatScreen.playerPos[1] = 0;
-                if(wasdLeft || arrowsLeft) {
-                    combatScreen.playerPos[0]--;
-                }
-                if(wasdRight || arrowsRight) {
-                    combatScreen.playerPos[0]++;
-                }
-                if(wasdUp || arrowsUp) {
-                    combatScreen.playerPos[1]--;
-                }
-                if(wasdDown || arrowsDown) {
-                    combatScreen.playerPos[1]++;
-                }
-            }
-            else {
-                //move the player (player 1) with WASD
-                combatScreen.playerPos[0] = 0;
-                combatScreen.playerPos[1] = 0;
-                if(wasdLeft) {
-                    combatScreen.playerPos[0]--;
-                }
-                if(wasdRight) {
-                    combatScreen.playerPos[0]++;
-                }
-                if(wasdUp) {
-                    combatScreen.playerPos[1]--;
-                }
-                if(wasdDown) {
-                    combatScreen.playerPos[1]++;
-                }
-                //move the enemy (player 2) with arrow keys
-                combatScreen.enemyPos[0] = 0;
-                combatScreen.enemyPos[1] = 0;
-                if(arrowsLeft) {
-                    combatScreen.enemyPos[0]++;
-                }
-                if(arrowsRight) {
-                    combatScreen.enemyPos[0]--;
-                }
-                if(arrowsUp) {
-                    combatScreen.enemyPos[1]--;
-                }
-                if(arrowsDown) {
-                    combatScreen.enemyPos[1]++;
-                }
-            }
-        }*/
     }
 
     @Override
