@@ -176,7 +176,7 @@ public class Player extends Actor {
         return RPG.splitImage(imageSheet, imageSheetRows, imageSheetColumns, width + imageSheetOffsetX, height + imageSheetOffsetY, imgIndex);
     }
     
-    public Image getAnim(String dir, RPG rpg) {
+    /*public Image getAnim(String dir, RPG rpg) {
         //boolean based animation: for the discerningly lazy programmer
         frame = rpg.animate(frame, 5); //every 5 steps, advance the animation
         if(dir.equals("up")) {
@@ -206,8 +206,23 @@ public class Player extends Actor {
         return null;
     }
     
+    public void drawStand(Graphics g) {
+        //not animated
+        if(dir.equals("up")) {
+            image = imgUp;
+        }
+        else if(dir.equals("down")) {
+            image = imgDown;
+        }
+        else if(dir.equals("left")) {
+            image = imgLeft;
+        }
+        else if(dir.equals("right")) {
+            image = imgRight;
+        }
+        g.drawImage(image, x, y, null);
+    }
     public void draw(Graphics g, RPG rpg) {
-        
         if(dir.equals("up")) {
             if(up && rpg.gameState == RPG.GAME) {
                 //animated
@@ -250,5 +265,5 @@ public class Player extends Actor {
         }
         g.drawImage(image, x, y, null);
     }
-    
+    */
 }

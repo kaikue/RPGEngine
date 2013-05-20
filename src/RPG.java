@@ -412,6 +412,77 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         g.drawImage(offscreenImage, -viewX, -viewY, null);
     }
     
+    public void drawPlayer(Graphics g) {
+        if(player.dir.equals("up")) {
+            if(player.up && gameState == GAME) {
+                player.image = getPlayerAnim();
+            }
+            else {
+                player.image = player.imgUp;
+            }
+        }
+        else if(player.dir.equals("down")) {
+            if(player.down && gameState == GAME) {
+                player.image = getPlayerAnim();
+            }
+            else {
+                //not animated
+                player.image = player.imgDown;
+            }
+        }
+        else if(player.dir.equals("left")) {
+            if(player.left && gameState == GAME) {
+                //animated
+                player.image = getPlayerAnim();
+            }
+            else {
+                //not animated
+                player.image = player.imgLeft;
+            }
+        }
+        else if(player.dir.equals("right")) {
+            if(player.right && gameState == GAME) {
+                //animated
+                player.image = getPlayerAnim();
+            }
+            else {
+                //not animated
+                player.image = player.imgRight;
+            }
+        }
+        g.drawImage(player.image, player.x, player.y, null);
+    }
+    
+    public Image getPlayerAnim() {
+        //boolean based animation: for the discerningly lazy programmer
+        player.frame = animate(player.frame, 5); //every 5 steps, advance the animation
+        if(player.dir.equals("up")) {
+            if(player.frame) {
+                return player.animUp1;
+            }
+            return player.animUp2;
+        }
+        if(player.dir.equals("down")) {
+            if(player.frame) {
+                return player.animDown1;
+            }
+            return player.animDown2;
+        }
+        if(player.dir.equals("left")) {
+            if(player.frame) {
+                return player.animLeft1;
+            }
+            return player.animLeft2;
+        }
+        if(player.dir.equals("right")) {
+            if(player.frame) {
+                return player.animRight1;
+            }
+            return player.animRight2;
+        }
+        return null;
+    }
+    
     public void update(Graphics g) {
         time++;
         pos = getLocationOnScreen();
@@ -679,8 +750,8 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     }
 
     @Override
-    public void keyTyped(KeyEvent arg0) {
-        // TODO Auto-generated method stub
+    public void keyTyped(KeyEvent e) {
+        ;
     }
 }
 
@@ -704,7 +775,7 @@ Level-switching issues
 Player draws on top when at very bottom
 Rate should be at least age to prevent multiple melee weapons
 Remove:
-    Attack.allAttacks
+    Attack.allAttacks (line 428 is problem- iterate through all objects and see if they're an attack?)
     Item.isWeapon
 
 Features to add:

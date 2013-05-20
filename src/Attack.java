@@ -34,6 +34,9 @@ public class Attack extends Solid {
         y += velocity[1] * speed;
         boundingBox.x += velocity[0] * speed;
         boundingBox.y += velocity[1] * speed;
+        if(speed == 0) {
+            //move with player
+        }
     }
 
 }

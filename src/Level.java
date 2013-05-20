@@ -269,7 +269,8 @@ public class Level {
         for(int i = 0; i < sortedAllSolids.size(); i++) {
             solid = sortedAllSolids.get(i);
             if(solid instanceof Player) {
-                ((Player)solid).draw(g, rpg);
+                //((Player)solid).draw(g, rpg);
+                rpg.drawPlayer(g);
             }
             else if(solid instanceof Transparency) {
                 ((Transparency)solid).draw(g, rpg);
