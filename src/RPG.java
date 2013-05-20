@@ -483,6 +483,13 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         return null;
     }
     
+    public void drawTransparency(Graphics g, Transparency t) {
+        //move the capture to -pos.x, -pos.y, then draw a clipped rectangle
+        int realX = pos.x + t.x;
+        int realY = pos.y + t.y;
+        g.drawImage(capture, t.x, t.y, t.x + t.drawSpace.width, t.y + t.drawSpace.height, realX, realY, realX + t.drawSpace.width, realY + t.drawSpace.height, null);
+    }
+    
     public void update(Graphics g) {
         time++;
         pos = getLocationOnScreen();
