@@ -44,6 +44,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     Level prevLevel, pauseScreen;
     ArrayList<Level> levels;
     boolean[] wasdKeys, arrowKeys;
+    boolean spacePressed, messageAdvanced;
     BufferedImage capture;
     Point pos;
     
@@ -51,6 +52,8 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         
         t = new Thread(this);
         t.start();
+        setFocusable(true);
+        requestFocus();
         
         //open the files
         gameData = readFile("data/game/game.txt");
@@ -143,24 +146,14 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         addKeyListener(this);
     }
     
-    public void space() {
-        if(player == null) {
-            return;
-        }
-        if(gameState == INVENTORY) {
-            gameState = GAME;
-        }
-        else if(gameState == TALK) {
-            if(!currentMessage.equals(null)) {
-                if(currentMessage.isLast()) {
-                    gameState = GAME;
-                }
-                currentMessage = currentMessage.nextMessage;
+    public void talk() {
+        if(!currentMessage.equals(null)) {
+            if(currentMessage.isLast()) {
+                gameState = GAME;
             }
+            currentMessage = currentMessage.nextMessage;
         }
-        else {
-            interact();
-        }
+        messageAdvanced = true;
     }
     
     public void nextLevel() {
@@ -238,13 +231,18 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         for(int i = 0; i < currentLevel.allSolids.size(); i++) {
             s = currentLevel.allSolids.get(i);
             if(s instanceof SceneryInteractable && player.distanceTo(s) < interactionDistance) {
+                System.out.println("Talking to " + s);
                 interactable = (SceneryInteractable)s;
                 gameState = TALK;
                 currentMessage = interactable.overlay;
+                spacePressed = false;
+                messageAdvanced = true;
                 return;
             }
         }
-        
+    }
+    
+    public void attack() {
         //use the player's current item (only usable items are weapons right now)
         if(player.inventoryItem != null && player.inventoryItem.isWeapon && time - player.lastShot > ((Weapon)player.inventoryItem).rate) {
             ((Weapon)player.inventoryItem).fire(player);
@@ -497,6 +495,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             //move the player
             player.move(currentLevel.allSolids, this);
             
+            //remove necessary Solids
             ArrayList<Solid> toRemove = new ArrayList<Solid>();
             if(currentLevel != null)
                 for(Solid solid : currentLevel.allSolids) {     //sometimes throws ConcurrentModificationException?
@@ -545,8 +544,19 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             else if(viewY + appHeight - player.y < viewDistFromPlayerY) {
                 viewY = Math.min(player.y + viewDistFromPlayerY - appHeight, currentLevel.height - appHeight);
             }
+            
+            if(spacePressed) {
+                attack();
+                if(!messageAdvanced) {
+                    interact();
+                }
+            }
         }
-        
+        else if(gameState == TALK) {
+            if(spacePressed &&!messageAdvanced) {
+                talk();
+            }
+        }
         paint(g);
     }
     
@@ -558,27 +568,39 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             }
         }
     }
-
+    
     @Override
-    public void mouseEntered(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-    }
-
+    public void mouseEntered(MouseEvent e) { }
+    
     @Override
-    public void mouseExited(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-    }
-
+    public void mouseExited(MouseEvent e) { }
+    
     @Override
-    public void mousePressed(MouseEvent arg0) {
-        // TODO Auto-generated method stub
-    }
-
+    public void mousePressed(MouseEvent e) { }
+    
     @Override
-    public void mouseReleased(MouseEvent arg0) {
-        // TODO Auto-generated method stub
+    public void mouseReleased(MouseEvent e) { }
+    
+    public void pressDirection(int dir, boolean wasd) {
+        if(gameState == INVENTORY) {
+            //open/close the sub-inventory or navigate within it
+            if(dir == 2) {
+                invSelect(player.inventorySlot - 1, false);
+            }
+            else if(dir == 3) {
+                invSelect(player.inventorySlot + 1, false);
+            }
+        }
+        else {
+            if(wasd) {
+                wasdKeys[dir] = true;
+            }
+            else {
+                arrowKeys[dir] = true;
+            }
+        }
     }
-
+    
     @Override
     public void keyPressed(KeyEvent e) {
         switch(e.getKeyCode()) {
@@ -592,7 +614,10 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             }
             break;
         case KeyEvent.VK_SPACE:
-            space();
+            spacePressed = true;
+            if(gameState == INVENTORY) {
+                gameState = GAME;
+            }
             break;
         case KeyEvent.VK_E:
             //if the subinventory is open, close it
@@ -604,72 +629,28 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             }
             break;
         case KeyEvent.VK_W:
-            if(gameState == INVENTORY) {
-                //open the sub-inventory or navigate within it
-            }
-            else {
-                wasdKeys[0] = true;
-            }
+            pressDirection(0, true);
             break;
         case KeyEvent.VK_S:
-            if(gameState == INVENTORY) {
-                //navigate within the sub-inventory
-            }
-            else {
-                wasdKeys[1] = true;
-            }
+            pressDirection(1, true);
             break;
         case KeyEvent.VK_A:
-            if(gameState == INVENTORY) {
-                //if the subinventory is open, move within it, else
-                invSelect(player.inventorySlot - 1, false);
-            }
-            else {
-                wasdKeys[2] = true;
-            }
+            pressDirection(2, true);
             break;
         case KeyEvent.VK_D:
-            if(gameState == INVENTORY) {
-                //if the subinventory is open, move within it, else
-                invSelect(player.inventorySlot + 1, false);
-            }
-            else {
-                wasdKeys[3] = true;
-            }
+            pressDirection(3, true);
             break;
         case KeyEvent.VK_UP:
-            if(gameState == INVENTORY) {
-                //open the sub-inventory or navigate within it
-            }
-            else {
-                arrowKeys[0] = true;
-            }
+            pressDirection(0, false);
             break;
         case KeyEvent.VK_DOWN:
-            if(gameState == INVENTORY) {
-                //navigate within the sub-inventory
-            }
-            else {
-                arrowKeys[1] = true;
-            }
+            pressDirection(1, false);
             break;
         case KeyEvent.VK_LEFT:
-            if(gameState == INVENTORY) {
-                //if the subinventory is open, move within it, else
-                invSelect(player.inventorySlot - 1, false);
-            }
-            else {
-                arrowKeys[2] = true;
-            }
+            pressDirection(2, false);
             break;
         case KeyEvent.VK_RIGHT:
-            if(gameState == INVENTORY) {
-                //if the subinventory is open, move within it, else
-                invSelect(player.inventorySlot + 1, false);
-            }
-            else {
-                arrowKeys[3] = true;
-            }
+            pressDirection(3, false);
             break;
         case KeyEvent.VK_N:
             nextLevel();
@@ -721,6 +702,10 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     @Override
     public void keyReleased(KeyEvent e) {
         switch(e.getKeyCode()) {
+        case KeyEvent.VK_SPACE:
+            spacePressed = false;
+            messageAdvanced = false;
+            break;
         case KeyEvent.VK_W:
             wasdKeys[0] = false;
             break;
@@ -764,8 +749,6 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
 
 /*
 Bugs to fix:
-Holding down space makes constantly flashing and re-interacting MessageOverlays
-    put in keyRelease?
 allOverlays does not include currentMessage (I didn't add it)
 Make weapons fire as fast as possible when space is first pressed
 Make NPCs Actors? (so that they can be killed, "showing" them a sword could kill them...)
@@ -784,6 +767,7 @@ Rate should be at least age to prevent multiple melee weapons
 Remove:
     Attack.allAttacks (line 428 is problem- iterate through all objects and see if they're an attack?)
     Item.isWeapon
+Keep inventory between levels if specified
 
 Features to add:
 Inventory
@@ -796,7 +780,7 @@ Inventory
     held item is displayed on player
 Multiple dialogue options for NPCs
     Some based on what item the player is holding
-Special events upon player interaction with NPCs, SceneryInteractable
+Special events upon player interaction with NPCs, SceneryInteractables
     Chests containing items
         would be SceneryInteractables with an event for giving the player the item and a message
 Sounds for items
