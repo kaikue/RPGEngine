@@ -19,12 +19,14 @@ boundingBoxX = 0
 boundingBoxY = 0
 
 begin S
-class = SceneryInteractable
+class = InputInteractable
 image = data/images/statuelarge.png
 boundingBoxWidth = 72
 boundingBoxHeight = 68
 boundingBoxX = 0
 boundingBoxY = 68
+code = Hello
+effect = nextLevel
 -data/images/knight_portrait.png, It's a statue of the king.
 
 begin D
@@ -35,6 +37,7 @@ boundingBoxHeight = 81
 boundingBoxX = 8
 boundingBoxY = 0
 effect = previousLevel
+keepInventory = true
 
 begin b
 class = Scenery

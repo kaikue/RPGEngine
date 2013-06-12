@@ -36,5 +36,8 @@ public class MessageOverlay extends Overlay {
         g.drawString(message, x + 200 + viewX, y + 50 + viewY); //text wrapping maybe using rpg.font()
         //perhaps draw parts of message gradually to make text appear over time?
     }
-
+    
+    public void advance(RPG rpg) {
+        rpg.currentMessage = nextMessage;
+    }
 }

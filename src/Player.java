@@ -117,7 +117,7 @@ public class Player extends Actor {
                     break;
                 }
                 else if(solid instanceof Item) {
-                    collect((Item)solid);
+                    collect((Item)solid, rpg);
                     break;
                 }
             }
@@ -134,7 +134,7 @@ public class Player extends Actor {
                     break;
                 }
                 else if(solid instanceof Item) {
-                    collect((Item)solid);
+                    collect((Item)solid, rpg);
                     break;
                 }
             }
@@ -148,9 +148,9 @@ public class Player extends Actor {
         y = boundingBox.y - boundingBoxOffsetY;
     }
     
-    public void collect(Item item) {
+    public void collect(Item item, RPG rpg) {
         inventory.add(item);
-        RPG.currentLevel.allSolids.remove(item);
+        rpg.currentLevel.allSolids.remove(item);
         updateHeldItem();
         //maybe play a sound?
     }
@@ -173,6 +173,6 @@ public class Player extends Actor {
     }
     
     public Image splitImage(int imgIndex) {
-        return RPG.splitImage(imageSheet, imageSheetRows, imageSheetColumns, width + imageSheetOffsetX, height + imageSheetOffsetY, imgIndex);
+        return RPGUtils.splitImage(imageSheet, imageSheetRows, imageSheetColumns, width + imageSheetOffsetX, height + imageSheetOffsetY, imgIndex);
     }
 }

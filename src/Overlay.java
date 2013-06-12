@@ -12,10 +12,6 @@ public class Overlay {
         this.y = y;
     }
     
-    public boolean advance() {
-        return true; //required for MessageOverlay advancing
-    }
-    
     public void draw(Graphics g, int viewX, int viewY) {    
         g.drawImage(image, x + viewX, y + viewY, null);
     }

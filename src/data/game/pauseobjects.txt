@@ -1,10 +1,5 @@
 music = data/music/music.wav
 
-begin B
-class = Button
-image = data/images/start.png
-effect = nextLevel
-
 begin b
 class = Scenery
 image = data/images/loading.png
@@ -12,3 +7,13 @@ boundingBoxWidth = 0
 boundingBoxHeight = 0
 boundingBoxX = 0
 boundingBoxY = 0
+
+begin R
+class = Button
+image = data/images/start.png
+effect = resume
+
+begin Q
+class = Button
+image = data/images/start.png
+effect = quit

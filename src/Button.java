@@ -11,13 +11,7 @@ public class Button extends Scenery {
     }
     
     public void click(RPG rpg) {
-        if(effect.equals("nextLevel")) {
-            rpg.nextLevel();
-        }
-        else if(effect.equals("previousLevel")) {
-            rpg.previousLevel();
-        }
-        //support for more effects...
+        rpg.performEffect(effect);
     }
     
     public void draw(Graphics g) {

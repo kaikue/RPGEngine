@@ -2,11 +2,8 @@ import java.applet.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
+
 import javax.swing.ImageIcon;
 
 public class RPG extends Applet implements Runnable, MouseListener, KeyListener {
@@ -18,6 +15,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     static final int GAME = 2;
     static final int TALK = 3;
     static final int INVENTORY = 4;
+    static final int INPUT = 5;
     
     long time;
     int fps;
@@ -40,55 +38,51 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     int viewX, viewY;
     int viewDistFromPlayerX, viewDistFromPlayerY;
     int numLevels;
-    static Level currentLevel;
+    Level currentLevel;
     Level prevLevel, pauseScreen;
     ArrayList<Level> levels;
     boolean[] wasdKeys, arrowKeys;
     boolean spacePressed, messageAdvanced;
     BufferedImage capture;
     Point pos;
+    TextField text;
+    java.awt.Button inputButton;
     
     public void init() {
-        
         t = new Thread(this);
         t.start();
         setFocusable(true);
         requestFocus();
         
         //open the files
-        gameData = readFile("data/game/game.txt");
-        //gameData = gameText.split("\\r?\\n");
+        gameData = RPGUtils.readFile("data/game/game.txt");
         
         //begin parsing the game data
         int line = 0;
-        numLevels = getIntFromString(gameData[line++], "numLevels = ");
-        fps = getIntFromString(gameData[line++], "fps = ");
-        appWidth = getIntFromString(gameData[line++], "appWidth = ");
-        appHeight = getIntFromString(gameData[line++], "appHeight = ");
-        interactionDistance = getDoubleFromString(gameData[line++], "interactionDistance = ");
-        tileSize = getIntFromString(gameData[line++], "tileSize = ");
+        numLevels = RPGUtils.getIntFromString(gameData[line++], "numLevels = ");
+        fps = RPGUtils.getIntFromString(gameData[line++], "fps = ");
+        appWidth = RPGUtils.getIntFromString(gameData[line++], "appWidth = ");
+        appHeight = RPGUtils.getIntFromString(gameData[line++], "appHeight = ");
+        interactionDistance = RPGUtils.getDoubleFromString(gameData[line++], "interactionDistance = ");
+        tileSize = RPGUtils.getIntFromString(gameData[line++], "tileSize = ");
         imgDialogBG = getImageFromString(gameData[line++], "imgDialogBG = ");
         imgInventoryBG = getImageFromString(gameData[line++], "imgInventoryBG = ");
         imgItemSelected = getImageFromString(gameData[line++], "imgItemSelected = ");
         imgLoading = getImageFromString(gameData[line++], "imgLoading = ");
-        viewDistFromPlayerX = getIntFromString(gameData[line++], "viewDistFromPlayerX = ");
-        viewDistFromPlayerY = getIntFromString(gameData[line++], "viewDistFromPlayerY = ");
-        font = getFontFromString(gameData[line++], "font = ");
+        viewDistFromPlayerX = RPGUtils.getIntFromString(gameData[line++], "viewDistFromPlayerX = ");
+        viewDistFromPlayerY = RPGUtils.getIntFromString(gameData[line++], "viewDistFromPlayerY = ");
+        font = RPGUtils.getFontFromString(gameData[line++], "font = ");
         //done parsing the game data
         
         solidsData = new String[numLevels][];
         levelsData = new String[numLevels][];
         
         for(int i = 0; i < numLevels; i++) {
-            //levelTexts.add(i, readFile("data/game/level" + i + ".txt"));
-            //solidsTexts.add(i, readFile("data/game/solids" + i + ".txt"));
-            //solidsData[i] = solidsTexts.get(i).split("\\r?\\n");
-            //levelsData[i] = levelTexts.get(i).split("\\r?\\n");
-            levelsData[i] = readFile("data/game/level" + i + ".txt");
-            solidsData[i] = readFile("data/game/objects" + i + ".txt");
+            levelsData[i] = RPGUtils.readFile("data/game/level" + i + ".txt");
+            solidsData[i] = RPGUtils.readFile("data/game/objects" + i + ".txt");
         }
-        pauseLevelData = readFile("data/game/pauselevel.txt");
-        pauseSolidsData = readFile("data/game/pauseobjects.txt");
+        pauseLevelData = RPGUtils.readFile("data/game/pauselevel.txt");
+        pauseSolidsData = RPGUtils.readFile("data/game/pauseobjects.txt");
         
         //do some game initialization stuff
         
@@ -108,13 +102,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         viewX = viewY = 0;
         setSize(appWidth, appHeight);
         
-        //Button titleButton = new Button(titleImage, appWidth / 2 - titleImage.getWidth(null) / 2, 100);
-        //Button startButton = new Button(startButtonImage, appWidth / 2 - titleImage.getWidth(null) / 2, 500);
-        //Button[] titleBList = {titleButton, startButton};
-        //titleScreen = new Level(titleBList);
-        
         //done with the game initialization stuff
-        
         
         levels = new ArrayList<Level>();
         for(int i = 0; i < numLevels; i++) {
@@ -136,11 +124,13 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         }
         pauseScreen = new Level(pauseLevelData, this);
         pauseScreen.learnSolids(pauseSolidsData, this);
+        pauseScreen.createObjects(this);
         
         currentLevel = levels.get(0);
         offscreenImage = createImage(currentLevel.width, currentLevel.height);
         offscr = offscreenImage.getGraphics();
         player = currentLevel.player;
+        setLayout(null);
         
         addMouseListener(this);
         addKeyListener(this);
@@ -150,45 +140,141 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         if(!currentMessage.equals(null)) {
             if(currentMessage.isLast()) {
                 gameState = GAME;
+                spacePressed = false; //so that you don't immediately attack after finishing a conversation
             }
-            currentMessage = currentMessage.nextMessage;
+            currentMessage.advance(this);
         }
         messageAdvanced = true;
     }
     
-    public void nextLevel() {
+    public void performEffect(String effect) {
+        if(effect.equals("nextLevel")) {
+            nextLevel(false);
+        }
+        else if(effect.equals("previousLevel")) {
+            previousLevel(false);
+        }
+        else if(effect.equals("resume")) {
+            unpause();
+        }
+        else if(effect.equals("quit")) {
+            quit();
+        }
+        //support for more effects...
+    }
+    
+    public void getInput(String code, String effect) {
+        text = new TextField();
+        setFont(font);
+        text.addKeyListener(new EnterListener(text, code, effect));
+        inputButton = new java.awt.Button("OK");
+        InputListener listener = new InputListener(text, code, effect);
+        inputButton.addActionListener(listener);
+        int textWidth = 100;
+        int textHeight = getFontMetrics(font).getHeight() + 10;
+        int buttonWidth = textWidth;
+        int buttonHeight = textHeight;
+        text.setBounds(appWidth / 2 - textWidth / 2, appHeight / 2 - textHeight, textWidth, textHeight);
+        inputButton.setBounds(appWidth / 2 - buttonWidth / 2, appHeight / 2, buttonWidth, buttonHeight);
+        add(text);
+        text.requestFocus(); //so that the user can type without selecting the box
+        add(inputButton);
+        validate();
+        prevState = gameState;
+        gameState = INPUT;
+    }
+    
+    private class InputListener implements ActionListener {
+        private TextField field;
+        private String code;
+        private String effect;
+        public InputListener(TextField field, String code, String effect) {
+            this.field = field;
+            this.code = code;
+            this.effect = effect;
+        }
+        @Override
+        public void actionPerformed(ActionEvent ae) {
+            checkCode(field, code, effect);
+        }
+    }
+    
+    private class EnterListener extends KeyAdapter {
+        private TextField field;
+        private String code;
+        private String effect;
+        public EnterListener(TextField field, String code, String effect) {
+            this.field = field;
+            this.code = code;
+            this.effect = effect;
+        }
+        public void keyPressed(KeyEvent e) {
+            int key = e.getKeyCode();
+            if(key == KeyEvent.VK_ENTER) {
+                checkCode(field, code, effect);
+            }
+        }
+    }
+    
+    public void checkCode(TextField field, String code, String effect) {
+        if(field.getText().equals(code)) {
+            //string is correct
+            performEffect(effect);
+        }
+        closeInput();
+    }
+    
+    public void closeInput() {
+        remove(text);
+        remove(inputButton);
+        gameState = prevState;
+    }
+    
+    public void nextLevel(boolean keepInventory) {
         int nextLevel = levels.indexOf(currentLevel) + 1;
         if(nextLevel >= levels.size()) {
             System.out.println("Cannot move to room after last room");
             System.exit(1);
         }
-        switchLevel(nextLevel);
+        switchLevel(nextLevel, keepInventory);
     }
     
-    public void previousLevel() {
+    public void previousLevel(boolean keepInventory) {
         int previousLevel = levels.indexOf(currentLevel) - 1;
         if(previousLevel < 0) {
             System.out.println("Cannot move to room before first room");
             System.exit(1);
         }
-        switchLevel(previousLevel);
+        switchLevel(previousLevel, keepInventory);
     }
     
-    public void switchLevel(int levelIndex) {
+    public void switchLevel(int levelIndex, boolean keepInventory) {
+        ArrayList<Item> oldInv = null;
+        if(player != null) {
+            oldInv = player.inventory;
+        }
         currentLevel.bgMusic.stop();
         currentLevel = levels.get(levelIndex);
         //currentLevel.bgMusic.loop(); //?
-        //currentLevel.learnSolids(solidsData[nextLevel], this);
-        //currentLevel.createObjects(this);
+        //reset the level
+        if(!currentLevel.visited) {
+            currentLevel.learnSolids(solidsData[levelIndex], this); //note: if you remove this, really weird stuff happens
+            currentLevel.createObjects(this);
+            currentLevel.visited = true;
+        }
         offscreenImage = createImage(currentLevel.width, currentLevel.height);
         offscr = offscreenImage.getGraphics();
         currentLevel.bgMusic.loop();
         player = currentLevel.player;
-        if(player == null) {
-            gameState = MENU;
+        if(player != null) {
+            gameState = GAME;
+            if(keepInventory) {
+                player.inventory = oldInv;
+                player.updateHeldItem();
+            }
         }
         else {
-            gameState = GAME;
+            gameState = MENU;
         }
     }
     
@@ -223,7 +309,11 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         return new MessageOverlay(imgDialogBG, portrait, 0, appHeight - new ImageIcon(imgDialogBG).getIconHeight(), message, nextMessage);
     }
     
-    public void interact() {
+    public InputMessage createInputMessage(Image portrait, String message, MessageOverlay nextMessage, String code, String effect) {
+        return new InputMessage(imgDialogBG, portrait, 0, appHeight - new ImageIcon(imgDialogBG).getIconHeight(), message, code, effect);
+    }
+    
+    public boolean interact() {
         //check if there is a SceneryInteractable near the player
         //if there is, set currentMessage to its messageOverlay and pause the game, so that dialogue can occur
         Solid s;
@@ -231,43 +321,24 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         for(int i = 0; i < currentLevel.allSolids.size(); i++) {
             s = currentLevel.allSolids.get(i);
             if(s instanceof SceneryInteractable && player.distanceTo(s) < interactionDistance) {
-                System.out.println("Talking to " + s);
                 interactable = (SceneryInteractable)s;
                 gameState = TALK;
                 currentMessage = interactable.overlay;
                 spacePressed = false;
                 messageAdvanced = true;
-                return;
+                return true;
             }
         }
+        return false;
     }
     
     public void attack() {
         //use the player's current item (only usable items are weapons right now)
-        if(player.inventoryItem != null && player.inventoryItem.isWeapon && time - player.lastShot > ((Weapon)player.inventoryItem).rate) {
+        if(player.inventoryItem != null && player.inventoryItem instanceof Weapon && time - player.lastShot > ((Weapon)player.inventoryItem).rate) {
             ((Weapon)player.inventoryItem).fire(player);
             currentLevel.allSolids.add(player.attack);
             player.lastShot = time;
         }
-    }
-    
-    public static String[] readFile(String fileName) {
-        Scanner reader;
-        try {
-            reader = new Scanner(new File(fileName));
-        }
-        catch(FileNotFoundException fnfe) {
-            System.out.println("Error: Could not read file " + fileName);
-            return new String[0];
-        }
-        
-        reader.useDelimiter("\n");
-        String data = "";
-        while(reader.hasNext()) {
-            data += reader.next() + "\n";
-        }
-        
-        return data.split("\\r?\\n");
     }
     
     public Image getImageFromString(String str, String start) {
@@ -278,53 +349,12 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         return null;
     }
     
-    public static int getIntFromString(String str, String start) {
-        if(str.startsWith(start)) {
-            return Integer.parseInt(str.substring(start.length()));
-        }
-        System.out.println("Could not find '" + start + "' in string, defaulting to 0");
-        return 0;
-    }
-    
-    public static double getDoubleFromString(String str, String start) {
-        if(str.startsWith(start)) {
-            return Double.parseDouble(str.substring(start.length()));
-        }
-        System.out.println("Could not find '" + start + "' in string, defaulting to 0.0");
-        return 0.0;
-    }
-    
     public AudioClip getAudioClipFromString(String str, String start) {
         if(str.startsWith(start)) {
             return getAudioClip(getCodeBase(), str.substring(start.length()));
         }
         System.out.println("Could not find '" + start + "' in string, defaulting to null");
         return null;
-    }
-    
-    public static Font getFontFromString(String str, String start) {
-        if(str.startsWith(start)) {
-            return new Font(str.substring(start.length()), Font.PLAIN, 18);
-        }
-        System.out.println("Could not find '" + start + "' in string, defaulting to null");
-        return null;
-    }
-    
-    public static String getSubstringFromString(String str, String start) {
-        if(str.startsWith(start)) {
-            return str.substring(start.length());
-        }
-        System.out.println("Could not find '" + start + "' in string, defaulting to blank string");
-        return "";
-    }
-    
-    public static Image splitImage(Image image, int rows, int columns, int imgWidth, int imgHeight, int imgIndex) {
-        ImageIcon i = new ImageIcon(image);
-        BufferedImage b = new BufferedImage(i.getIconWidth(), i.getIconHeight(), BufferedImage.TYPE_4BYTE_ABGR);
-        b.createGraphics().drawImage(image, null, null);
-        int x = imgWidth * (imgIndex % rows);
-        int y = imgHeight * (imgIndex / rows);
-        return b.getSubimage(x, y, imgWidth, imgHeight);
     }
     
     public void invSelect(int index, boolean unpause) {
@@ -377,7 +407,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             currentLevel.draw(offscr, -viewX, -viewY, this);
         }
         
-        else if(gameState == GAME || gameState == TALK || gameState == INVENTORY) {
+        else if(gameState == GAME || gameState == TALK || gameState == INVENTORY || gameState == INPUT) {
             currentLevel.draw(offscr, -viewX, -viewY, this);
             //draw the player's health
             offscr.setColor(Color.RED);
@@ -385,8 +415,8 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             offscr.setColor(Color.GREEN);
             offscr.fillRect(10 + viewX, 10 + viewY, (int)(100.0 * player.health / player.maxHealth), 20);
             
-            //draw the current MessageOverlay if it exists
-            if(currentMessage != null) {
+            //draw the current conversation
+            if(gameState == TALK) {
                 currentMessage.draw(offscr, viewX, viewY);
             }
             
@@ -405,6 +435,10 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
                     offscr.drawImage(player.inventory.get(i).image, viewX + (itemSelectedIcon.getIconWidth() + selectedOffsetX) * i, viewY + bgY + selectedOffsetY, null);
                 }
             }
+        }
+        
+        else if(gameState == PAUSE) {
+            currentLevel.draw(offscr, 0, 0, this);
         }
         
         g.drawImage(offscreenImage, -viewX, -viewY, null);
@@ -493,35 +527,38 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         pos = getLocationOnScreen();
         if(gameState == GAME) {
             //move the player
+            updatePlayerMove();
             player.move(currentLevel.allSolids, this);
             
             //remove necessary Solids
             ArrayList<Solid> toRemove = new ArrayList<Solid>();
-            if(currentLevel != null)
-                for(Solid solid : currentLevel.allSolids) {     //sometimes throws ConcurrentModificationException?
-                    //update the solids (only used for Attacks right now)
-                    solid.update();
-                    //check if the solid is hit by an attack
-                    for(Attack attack : Attack.allAttacks) {    //sometimes throws ConcurrentModificationException
-                        if(attack.boundingBox.intersects(solid.boundingBox)) {
-                            if(solid instanceof Actor) {
-                                if(!attack.creator.equals(solid)) {
-                                    ((Actor)solid).health -= attack.damage;
-                                    toRemove.add(attack);
-                                }
-                            }
-                            else if(!(solid instanceof Attack)){ //so that it doesn't collide with itself
+            for(int i = 0; i < currentLevel.allSolids.size(); i++) {
+                Solid solid = currentLevel.allSolids.get(i);
+                if(solid instanceof Attack) {
+                    ((Attack)solid).update(this);
+                }
+                //check if the solid is hit by an attack
+                for(int j = 0; j < Attack.allAttacks.size(); j++) {
+                    Attack attack = Attack.allAttacks.get(j);
+                    if(attack.boundingBox.intersects(solid.boundingBox)) {
+                        if(solid instanceof Actor) {
+                            if(!attack.creator.equals(solid)) {
+                                ((Actor)solid).health -= attack.damage;
                                 toRemove.add(attack);
                             }
                         }
-                    }
-                    //kill necessary Actors
-                    if(solid instanceof Actor) {
-                        if(((Actor)solid).killMe()) {
-                            toRemove.add(solid);
+                        else if(!(solid instanceof Attack)){ //so that it doesn't collide with itself
+                            toRemove.add(attack);
                         }
                     }
                 }
+                //kill necessary Actors
+                if(solid instanceof Actor) {
+                    if(((Actor)solid).killMe()) {
+                        toRemove.add(solid);
+                    }
+                }
+            }
             for(Solid removeMe : toRemove) {
                 currentLevel.allSolids.remove(removeMe);
                 if(removeMe instanceof Attack) {
@@ -546,25 +583,35 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             }
             
             if(spacePressed) {
-                attack();
                 if(!messageAdvanced) {
-                    interact();
+                    if(!interact()) {
+                        attack();
+                    }
+                }
+                else {
+                    attack();
                 }
             }
         }
         else if(gameState == TALK) {
+            updatePlayerMove();
             if(spacePressed &&!messageAdvanced) {
                 talk();
             }
+        }
+        else if(gameState == INVENTORY) {
+            updatePlayerMove();
         }
         paint(g);
     }
     
     @Override
     public void mouseClicked(MouseEvent e) {
-        for(Solid s : currentLevel.allSolids) {
-            if(s instanceof Button && s.boundingBox.contains(e.getX(), e.getY())) {
-                ((Button)s).click(this);
+        if(gameState == MENU || gameState == PAUSE) {
+            for(Solid s : currentLevel.allSolids) {
+                if(s instanceof Button && s.boundingBox.contains(e.getX(), e.getY())) {
+                    ((Button)s).click(this);
+                }
             }
         }
     }
@@ -601,11 +648,22 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         }
     }
     
+    public void updatePlayerMove() {
+        player.up = wasdKeys[0] || arrowKeys[0];
+        player.down = wasdKeys[1] || arrowKeys[1];
+        player.left = wasdKeys[2] || arrowKeys[2];
+        player.right = wasdKeys[3] || arrowKeys[3];
+    }
+    
     @Override
     public void keyPressed(KeyEvent e) {
         switch(e.getKeyCode()) {
+        case KeyEvent.VK_BACK_QUOTE:
+            if(gameState == GAME) {
+                getInput("next", "nextLevel");
+            }
+            break;
         case KeyEvent.VK_ESCAPE:
-            //escape
             if(gameState == GAME || gameState == TALK || gameState == INVENTORY) {
                 pause();
             }
@@ -652,12 +710,13 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         case KeyEvent.VK_RIGHT:
             pressDirection(3, false);
             break;
-        case KeyEvent.VK_N:
-            nextLevel();
+        /*case KeyEvent.VK_N:
+            nextLevel(true);
             break;
         case KeyEvent.VK_B:
-            previousLevel();
+            previousLevel(true);
             break;
+        */
         case KeyEvent.VK_1:
             invSelect(0, true);
             break;
@@ -691,14 +750,8 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         default:
             break;
         }
-        if(gameState == GAME || gameState == TALK || gameState == INVENTORY) {
-            player.up = wasdKeys[0] || arrowKeys[0];
-            player.down = wasdKeys[1] || arrowKeys[1];
-            player.left = wasdKeys[2] || arrowKeys[2];
-            player.right = wasdKeys[3] || arrowKeys[3];
-        }
     }
-
+    
     @Override
     public void keyReleased(KeyEvent e) {
         switch(e.getKeyCode()) {
@@ -733,46 +786,39 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         default:
             break;
         }
-        if(gameState == GAME || gameState == TALK || gameState == INVENTORY) {
-            player.up = wasdKeys[0] || arrowKeys[0];
-            player.down = wasdKeys[1] || arrowKeys[1];
-            player.left = wasdKeys[2] || arrowKeys[2];
-            player.right = wasdKeys[3] || arrowKeys[3];
-        }
     }
-
+    
     @Override
-    public void keyTyped(KeyEvent e) {
-        ;
+    public void keyTyped(KeyEvent e) { }
+    
+    public void quit() {
+        //save the game
+        System.exit(0);
     }
 }
 
 /*
-Bugs to fix:
-allOverlays does not include currentMessage (I didn't add it)
-Make weapons fire as fast as possible when space is first pressed
-Make NPCs Actors? (so that they can be killed, "showing" them a sword could kill them...)
-Fix ConcurrentModificationExceptions (445, 449)
-Remove n and b shortcuts to levels (when game is finished)
+Issues to fix:
 Player side animation needs improvement
 Loading screen takes too long to load
-Pause screen doesn't draw
-    May just be due to lack of content
-Level-switching issues
-    player's position is not reset- regenerate objects
-    viewport sometimes shows part of old level (boundary issues)
-    using the previousLevel door then n brings you back to start with a NullPointerException
-Player draws on top when at very bottom
+Player draws on top when at very bottom (player.speed-sized border at the bottom?)
+Remove Attack.allAttacks (line 428 is problem- iterate through all objects and see if they're an attack?)
+Make separate images for directional attacks (or reverse/rotate?)
+Attacks appear for a second when spawned over a Solid (on create, check if collision?)
+Give LevelWarpers X and Y spawn points so that player knows where to spawn on the next level (allows circular room configurations)
+Multiple codes and effects for one input box
+Remove Overlays?
+    MessageOverlay is the only overlay I'm using, everything else can just be Scenery
+
+Notes:
+allOverlays does not include currentMessage (I didn't add it)
+Inventory
+    slots 1 through 9 are items, slot 0 is always blank (for holding nothing)
+    note: actual slot number is one less than the number told to the player (to match up with keyboard)
 Rate should be at least age to prevent multiple melee weapons
-Remove:
-    Attack.allAttacks (line 428 is problem- iterate through all objects and see if they're an attack?)
-    Item.isWeapon
-Keep inventory between levels if specified
 
 Features to add:
 Inventory
-    slots 1 through 9 are items, slot 0 is always blank (for holding nothing)
-    note: actual slot number is one less than the number told to the player (to match up with keyboard) 
     press up to open expanded inventory for that slot
         if you select an item already in the slot, switch items with that slot
         press down to close & return to bar editing
@@ -783,11 +829,10 @@ Multiple dialogue options for NPCs
 Special events upon player interaction with NPCs, SceneryInteractables
     Chests containing items
         would be SceneryInteractables with an event for giving the player the item and a message
+Make NPCs Actors? (so that they can be killed, "showing" them a sword could kill them...)
 Sounds for items
 Give Items a separate image for inventory appearance?
-Menus- instructions, settings, credits
-Pause screen
-More button effects
+Instructions, settings, credits
 Real loading screen
 Resolution?
 Cutscenes somehow...
@@ -797,6 +842,8 @@ Cutscenes somehow...
     could appear on start of level, interaction with SceneryInteractables 
 Make text in MessageOverlays appear over time, also wrap around
 Make parsing of .txt's more lenient (stuff can be on any line)
+Save & load game
+Enemy AI
 
 Classes: (redo this, outdated)
 RPG: the game itself
@@ -815,5 +862,5 @@ Level: a level or GUI menu
 Overlay: gets drawn above the solids (ex: fog)                                  RPG has a list of these
     note: just using solids w/out boundingbox is easier if you don't need them to be on top
     MessageOverlay: shows a portrait and some text (ex: dialogue)
-CustomComparator: for sorting based on y-position, don't forget to reverse the sorted ArrayList
+SolidComparator: for sorting based on y-position, don't forget to reverse the sorted ArrayList
 */

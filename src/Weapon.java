@@ -11,7 +11,6 @@ public class Weapon extends Item {
         super(image, x, y, boundingBox);
         this.attack = attack;
         this.rate = rate;
-        this.isWeapon = true; //this really should not be necessary, remove this sometime
     }
     
     public void fire(Actor actor) {

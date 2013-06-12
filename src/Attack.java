@@ -22,21 +22,21 @@ public class Attack extends Solid {
         Attack.allAttacks.add(this);
     }
     
-    public void update() {
+    public void update(RPG rpg) {
         if(age == 0) {
             Attack.allAttacks.remove(this);
-            RPG.currentLevel.allSolids.remove(this);
+            rpg.currentLevel.allSolids.remove(this);
         }
         if(age > 0) {
             age--;
+        }
+        if(speed == 0) {
+            //move with player
         }
         x += velocity[0] * speed;
         y += velocity[1] * speed;
         boundingBox.x += velocity[0] * speed;
         boundingBox.y += velocity[1] * speed;
-        if(speed == 0) {
-            //move with player
-        }
     }
 
 }

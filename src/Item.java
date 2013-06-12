@@ -4,7 +4,7 @@ import java.awt.*;
 public class Item extends Solid {
     
     Image image;
-    boolean isWeapon = false;
+    //boolean isWeapon = false;
     
     public Item(Image image, int x, int y, Rectangle boundingBox) {
         super(x, y, boundingBox);

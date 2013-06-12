@@ -1,6 +1,6 @@
 import java.util.Comparator;
 
-public class CustomComparator implements Comparator<Solid> {
+public class SolidComparator implements Comparator<Solid> {
 
     public int compare(Solid s1, Solid s2) {
         //sorts by y, then x

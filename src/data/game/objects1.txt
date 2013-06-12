@@ -34,6 +34,7 @@ boundingBoxHeight = 40
 boundingBoxX = 608
 boundingBoxY = 176
 effect = nextLevel
+keepInventory = true
 
 begin b
 class = Scenery
