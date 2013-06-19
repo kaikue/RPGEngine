@@ -1,5 +1,6 @@
 import java.awt.Font;
 import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -67,6 +68,14 @@ public class RPGUtils {
         }
         System.out.println("Could not find '" + start + "' in string, defaulting to blank string");
         return "";
+    }
+    
+    public static Image getImageFromString(String str, String start) {
+        if(str.startsWith(start)) {
+            return Toolkit.getDefaultToolkit().getImage(str.substring(start.length()));
+        }
+        System.out.println("Could not find '" + start + "' in string, defaulting to null");
+        return null;
     }
     
     public static Image splitImage(Image image, int rows, int columns, int imgWidth, int imgHeight, int imgIndex) {

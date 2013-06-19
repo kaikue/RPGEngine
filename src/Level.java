@@ -39,7 +39,7 @@ public class Level {
                     className = solids[i+1].substring(8);
                     if(className.equals("Player")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
-                        Image playerImage = rpg.getImageFromString(solids[i+2], "image = ");
+                        Image playerImage = RPGUtils.getImageFromString(solids[i+2], "image = ");
                         int playerWidth = RPGUtils.getIntFromString(solids[i+3], "width = ");
                         int playerHeight = RPGUtils.getIntFromString(solids[i+4], "height = ");
                         int playerSpeed = RPGUtils.getIntFromString(solids[i+5], "speed = ");
@@ -51,7 +51,7 @@ public class Level {
                     }
                     else if(className.equals("Scenery")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
-                        Image image = rpg.getImageFromString(solids[i+2], "image = ");
+                        Image image = RPGUtils.getImageFromString(solids[i+2], "image = ");
                         int boundingBoxWidth = RPGUtils.getIntFromString(solids[i+3], "boundingBoxWidth = ");
                         int boundingBoxHeight = RPGUtils.getIntFromString(solids[i+4], "boundingBoxHeight = ");
                         int boundingBoxX = RPGUtils.getIntFromString(solids[i+5], "boundingBoxX = ");
@@ -61,7 +61,7 @@ public class Level {
                     }
                     else if(className.equals("SceneryInteractable")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
-                        Image image = rpg.getImageFromString(solids[i+2], "image = ");
+                        Image image = RPGUtils.getImageFromString(solids[i+2], "image = ");
                         int boundingBoxWidth = RPGUtils.getIntFromString(solids[i+3], "boundingBoxWidth = ");
                         int boundingBoxHeight = RPGUtils.getIntFromString(solids[i+4], "boundingBoxHeight = ");
                         int boundingBoxX = RPGUtils.getIntFromString(solids[i+5], "boundingBoxX = ");
@@ -76,7 +76,7 @@ public class Level {
                         MessageOverlay message = null;
                         while(solids[currentLine].startsWith("-")) {
                             String[] line = solids[currentLine].split(", ");
-                            Image img = rpg.getImageFromString(line[0], "-");
+                            Image img = RPGUtils.getImageFromString(line[0], "-");
                             String text = line[1];
                             message = rpg.createMessageOverlay(img, text, message);
                             currentLine--;
@@ -86,7 +86,7 @@ public class Level {
                     }
                     else if(className.equals("InputInteractable")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
-                        Image image = rpg.getImageFromString(solids[i+2], "image = ");
+                        Image image = RPGUtils.getImageFromString(solids[i+2], "image = ");
                         int boundingBoxWidth = RPGUtils.getIntFromString(solids[i+3], "boundingBoxWidth = ");
                         int boundingBoxHeight = RPGUtils.getIntFromString(solids[i+4], "boundingBoxHeight = ");
                         int boundingBoxX = RPGUtils.getIntFromString(solids[i+5], "boundingBoxX = ");
@@ -101,13 +101,13 @@ public class Level {
                         currentLine--;
                         //move upwards
                         String[] line = solids[currentLine].split(", ");
-                        Image img = rpg.getImageFromString(line[0], "-");
+                        Image img = RPGUtils.getImageFromString(line[0], "-");
                         String text = line[1];
                         MessageOverlay message = rpg.createInputMessage(img, text, null, code, effect);
                         currentLine--;
                         while(solids[currentLine].startsWith("-")) {
                             line = solids[currentLine].split(", ");
-                            img = rpg.getImageFromString(line[0], "-");
+                            img = RPGUtils.getImageFromString(line[0], "-");
                             text = line[1];
                             message = rpg.createMessageOverlay(img, text, message);
                             currentLine--;
@@ -117,7 +117,7 @@ public class Level {
                     }
                     else if(className.equals("NPC")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
-                        Image image = rpg.getImageFromString(solids[i+2], "image = ");
+                        Image image = RPGUtils.getImageFromString(solids[i+2], "image = ");
                         //find the last message
                         int currentLine = i+3;
                         while(solids[currentLine].startsWith("-")) {
@@ -128,7 +128,7 @@ public class Level {
                         MessageOverlay message = null;
                         while(solids[currentLine].startsWith("-")) {
                             String[] line = solids[currentLine].split(", ");
-                            Image img = rpg.getImageFromString(line[0], "-");
+                            Image img = RPGUtils.getImageFromString(line[0], "-");
                             String text = line[1];
                             message = rpg.createMessageOverlay(img, text, message);
                             currentLine--;
@@ -138,7 +138,7 @@ public class Level {
                     }
                     else if(className.equals("Item")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
-                        Image image = rpg.getImageFromString(solids[i+2], "image = ");
+                        Image image = RPGUtils.getImageFromString(solids[i+2], "image = ");
                         int boundingBoxWidth = RPGUtils.getIntFromString(solids[i+3], "boundingBoxWidth = ");
                         int boundingBoxHeight = RPGUtils.getIntFromString(solids[i+4], "boundingBoxHeight = ");
                         int boundingBoxX = RPGUtils.getIntFromString(solids[i+5], "boundingBoxX = ");
@@ -148,7 +148,7 @@ public class Level {
                     }
                     else if(className.equals("Enemy")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
-                        Image image = rpg.getImageFromString(solids[i+2], "image = ");
+                        Image image = RPGUtils.getImageFromString(solids[i+2], "image = ");
                         int boundingBoxWidth = RPGUtils.getIntFromString(solids[i+3], "boundingBoxWidth = ");
                         int boundingBoxHeight = RPGUtils.getIntFromString(solids[i+4], "boundingBoxHeight = ");
                         int boundingBoxX = RPGUtils.getIntFromString(solids[i+5], "boundingBoxX = ");
@@ -159,13 +159,13 @@ public class Level {
                     }
                     else if(className.equals("Weapon")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
-                        Image image = rpg.getImageFromString(solids[i+2], "image = ");
+                        Image image = RPGUtils.getImageFromString(solids[i+2], "image = ");
                         int boundingBoxWidth = RPGUtils.getIntFromString(solids[i+3], "boundingBoxWidth = ");
                         int boundingBoxHeight = RPGUtils.getIntFromString(solids[i+4], "boundingBoxHeight = ");
                         int boundingBoxX = RPGUtils.getIntFromString(solids[i+5], "boundingBoxX = ");
                         int boundingBoxY = RPGUtils.getIntFromString(solids[i+6], "boundingBoxY = ");
                         int rate = RPGUtils.getIntFromString(solids[i+7], "rate = ");
-                        Image attackImage = rpg.getImageFromString(solids[i+8], "attackImage = ");
+                        Image attackImage = RPGUtils.getImageFromString(solids[i+8], "attackImage = ");
                         int attackBBW = RPGUtils.getIntFromString(solids[i+9], "attackBBW = ");
                         int attackBBH = RPGUtils.getIntFromString(solids[i+10], "attackBBH = ");
                         int attackBBX = RPGUtils.getIntFromString(solids[i+11], "attackBBX = ");
@@ -180,22 +180,30 @@ public class Level {
                     }
                     else if(className.equals("Button")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
-                        Image image = rpg.getImageFromString(solids[i+2], "image = ");
+                        Image image = RPGUtils.getImageFromString(solids[i+2], "image = ");
                         String effect = RPGUtils.getSubstringFromString(solids[i+3], "effect = ");
                         Button button = new Button(image, 0, 0, effect);
                         rpg.solidDefs.put(letter, button);
                     }
                     else if(className.equals("LevelWarper")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
-                        Image image = rpg.getImageFromString(solids[i+2], "image = ");
+                        Image image = RPGUtils.getImageFromString(solids[i+2], "image = ");
                         int boundingBoxWidth = RPGUtils.getIntFromString(solids[i+3], "boundingBoxWidth = ");
                         int boundingBoxHeight = RPGUtils.getIntFromString(solids[i+4], "boundingBoxHeight = ");
                         int boundingBoxX = RPGUtils.getIntFromString(solids[i+5], "boundingBoxX = ");
                         int boundingBoxY = RPGUtils.getIntFromString(solids[i+6], "boundingBoxY = ");
                         String effect = RPGUtils.getSubstringFromString(solids[i+7], "effect = ");
                         boolean keepInventory = RPGUtils.getBooleanFromString(solids[i+8], "keepInventory = ");
-                        LevelWarper levelWarper = new LevelWarper(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), effect, keepInventory);
-                        rpg.solidDefs.put(letter, levelWarper);
+                        if(solids[i+9].startsWith("spawnX = ")) {
+                            int spawnX = RPGUtils.getIntFromString(solids[i+9], "spawnX = ");
+                            int spawnY = RPGUtils.getIntFromString(solids[i+10], "spawnY = ");
+                            LevelWarper levelWarper = new LevelWarper(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), effect, keepInventory, spawnX, spawnY);
+                            rpg.solidDefs.put(letter, levelWarper);
+                        }
+                        else {
+                            LevelWarper levelWarper = new LevelWarper(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), effect, keepInventory);
+                            rpg.solidDefs.put(letter, levelWarper);
+                        }
                     }
                     else if(className.equals("Transparency")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
@@ -264,7 +272,7 @@ public class Level {
                         allSolids.add(button);
                     }
                     else if(solid instanceof LevelWarper) {
-                        LevelWarper levelWarper = new LevelWarper(((LevelWarper)solid).image, j * rpg.tileSize, i * rpg.tileSize, new Rectangle(solid.boundingBox.x + j * rpg.tileSize, solid.boundingBox.y + i * rpg.tileSize, solid.boundingBox.width, solid.boundingBox.height), ((LevelWarper)solid).effect, ((LevelWarper)solid).keepInventory);
+                        LevelWarper levelWarper = new LevelWarper(((LevelWarper)solid).image, j * rpg.tileSize, i * rpg.tileSize, new Rectangle(solid.boundingBox.x + j * rpg.tileSize, solid.boundingBox.y + i * rpg.tileSize, solid.boundingBox.width, solid.boundingBox.height), ((LevelWarper)solid).effect, ((LevelWarper)solid).keepInventory, ((LevelWarper)solid).spawnX, ((LevelWarper)solid).spawnY);
                         allSolids.add(levelWarper);
                     }
                     else if(solid instanceof Scenery) {

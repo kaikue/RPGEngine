@@ -35,6 +35,8 @@ boundingBoxX = 608
 boundingBoxY = 176
 effect = nextLevel
 keepInventory = true
+spawnX = 352
+spawnY = 192
 
 begin b
 class = Scenery

@@ -1,17 +1,17 @@
 import java.awt.Rectangle;
 
 
-public class Actor extends Solid{
+public class Actor extends Solid {
 
     int maxHealth, health;
     String dir;
-    Attack attack;
+    //Attack attack;
     
     public Actor(int x, int y, Rectangle boundingBox, int health) {
         super(x, y, boundingBox);
         this.maxHealth = health;
         this.health = health;
-        this.attack = null;
+        //this.attack = null;
     }
     
     public double distanceTo(Solid s) {

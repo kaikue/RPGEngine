@@ -39,7 +39,7 @@ public class Player extends Actor {
         ImageIcon i = new ImageIcon(this.imageSheet);
         this.imageSheetRows = i.getIconWidth() / (this.width + this.imageSheetOffsetX);
         this.imageSheetColumns = i.getIconHeight() / (this.height + this.imageSheetOffsetY);
-        this.attack = null;
+        //this.attack = null;
         
         //get images from spritesheet
         this.imgUp = splitImage(1);
@@ -162,14 +162,14 @@ public class Player extends Actor {
         else {
             inventoryItem = null;
         }
-        
+        /*
         if(inventoryItem instanceof Weapon) {
             attack = ((Weapon)inventoryItem).attack;
             attack.creator = this;
         }
         else {
             attack = null;
-        }
+        }*/
     }
     
     public Image splitImage(int imgIndex) {

@@ -65,10 +65,10 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         appHeight = RPGUtils.getIntFromString(gameData[line++], "appHeight = ");
         interactionDistance = RPGUtils.getDoubleFromString(gameData[line++], "interactionDistance = ");
         tileSize = RPGUtils.getIntFromString(gameData[line++], "tileSize = ");
-        imgDialogBG = getImageFromString(gameData[line++], "imgDialogBG = ");
-        imgInventoryBG = getImageFromString(gameData[line++], "imgInventoryBG = ");
-        imgItemSelected = getImageFromString(gameData[line++], "imgItemSelected = ");
-        imgLoading = getImageFromString(gameData[line++], "imgLoading = ");
+        imgDialogBG = RPGUtils.getImageFromString(gameData[line++], "imgDialogBG = ");
+        imgInventoryBG = RPGUtils.getImageFromString(gameData[line++], "imgInventoryBG = ");
+        imgItemSelected = RPGUtils.getImageFromString(gameData[line++], "imgItemSelected = ");
+        imgLoading = RPGUtils.getImageFromString(gameData[line++], "imgLoading = ");
         viewDistFromPlayerX = RPGUtils.getIntFromString(gameData[line++], "viewDistFromPlayerX = ");
         viewDistFromPlayerY = RPGUtils.getIntFromString(gameData[line++], "viewDistFromPlayerY = ");
         font = RPGUtils.getFontFromString(gameData[line++], "font = ");
@@ -335,23 +335,22 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     public void attack() {
         //use the player's current item (only usable items are weapons right now)
         if(player.inventoryItem != null && player.inventoryItem instanceof Weapon && time - player.lastShot > ((Weapon)player.inventoryItem).rate) {
-            ((Weapon)player.inventoryItem).fire(player);
-            currentLevel.allSolids.add(player.attack);
+            Attack attack = ((Weapon)player.inventoryItem).fire(player);
+            currentLevel.allSolids.add(attack);
             player.lastShot = time;
         }
-    }
-    
-    public Image getImageFromString(String str, String start) {
-        if(str.startsWith(start)) {
-            return getImage(getCodeBase(), str.substring(start.length()));
-        }
-        System.out.println("Could not find '" + start + "' in string, defaulting to null");
-        return null;
     }
     
     public AudioClip getAudioClipFromString(String str, String start) {
         if(str.startsWith(start)) {
             return getAudioClip(getCodeBase(), str.substring(start.length()));
+            /*
+            try {
+                return Applet.newAudioClip(new URL(str.substring(start.length())));
+            } catch (MalformedURLException e) {
+                System.out.println("Invalid sound URL, defaulting to null");
+                return null;
+            }*/
         }
         System.out.println("Could not find '" + start + "' in string, defaulting to null");
         return null;
@@ -397,7 +396,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     public void paint(Graphics g) {
         offscr.setFont(font);
         if(gameState == LOADING) {
-            g.drawImage(imgLoading, 0, 0, null);
+            g.drawImage(imgLoading, 0, 0, null); //do I really need this?
             offscr.drawString("", 0, 0); //loads the font, I'm not sure how else to do it
             offscr.clearRect(0, 0, appWidth, appHeight);
             gameState = MENU;
@@ -535,20 +534,20 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             for(int i = 0; i < currentLevel.allSolids.size(); i++) {
                 Solid solid = currentLevel.allSolids.get(i);
                 if(solid instanceof Attack) {
-                    ((Attack)solid).update(this);
-                }
-                //check if the solid is hit by an attack
-                for(int j = 0; j < Attack.allAttacks.size(); j++) {
-                    Attack attack = Attack.allAttacks.get(j);
-                    if(attack.boundingBox.intersects(solid.boundingBox)) {
-                        if(solid instanceof Actor) {
-                            if(!attack.creator.equals(solid)) {
-                                ((Actor)solid).health -= attack.damage;
+                    Attack attack = (Attack)solid;
+                    attack.update(this);
+                    for(int j = 0; j < currentLevel.allSolids.size(); j++) {
+                        Solid solid2 = currentLevel.allSolids.get(j);
+                        if(attack.boundingBox.intersects(solid2.boundingBox)) {
+                            if(solid2 instanceof Actor) {
+                                if(!attack.creator.equals(solid2)) {
+                                    ((Actor)solid2).health -= attack.damage;
+                                    toRemove.add(attack);
+                                }
+                            }
+                            else if(!(solid2 instanceof Attack)){ //so that it doesn't collide with itself or other Attacks
                                 toRemove.add(attack);
                             }
-                        }
-                        else if(!(solid instanceof Attack)){ //so that it doesn't collide with itself
-                            toRemove.add(attack);
                         }
                     }
                 }
@@ -561,9 +560,6 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             }
             for(Solid removeMe : toRemove) {
                 currentLevel.allSolids.remove(removeMe);
-                if(removeMe instanceof Attack) {
-                    Attack.allAttacks.remove(removeMe);
-                }
             }
             
             //move the view
@@ -599,7 +595,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
                 talk();
             }
         }
-        else if(gameState == INVENTORY) {
+        else if(gameState == INVENTORY || gameState == INPUT) {
             updatePlayerMove();
         }
         paint(g);
@@ -801,21 +797,23 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
 Issues to fix:
 Player side animation needs improvement
 Loading screen takes too long to load
+    Remove loading screen image? it just loads the font
 Player draws on top when at very bottom (player.speed-sized border at the bottom?)
-Remove Attack.allAttacks (line 428 is problem- iterate through all objects and see if they're an attack?)
-Make separate images for directional attacks (or reverse/rotate?)
-Attacks appear for a second when spawned over a Solid (on create, check if collision?)
-Give LevelWarpers X and Y spawn points so that player knows where to spawn on the next level (allows circular room configurations)
 Multiple codes and effects for one input box
-Remove Overlays?
-    MessageOverlay is the only overlay I'm using, everything else can just be Scenery
+Remove Overlays, CombatScreen
+    MessageOverlay is the only overlay used and there's only 1, everything else can just be Scenery
+Attacks don't destroy when colliding with Solids
+Make the audio creation function static
+Attacks draw below those who created them
+    make boundingbox below creator's?
 
 Notes:
 allOverlays does not include currentMessage (I didn't add it)
 Inventory
     slots 1 through 9 are items, slot 0 is always blank (for holding nothing)
     note: actual slot number is one less than the number told to the player (to match up with keyboard)
-Rate should be at least age to prevent multiple melee weapons
+Attack rate should be at least age to prevent multiple melee weapons appearing at once
+Attacks appear for a second when spawned over a Solid (on create, check if collision?)
 
 Features to add:
 Inventory
@@ -853,7 +851,7 @@ Solid: any object that the player can collide with                              
         Enemy: an enemy
     Scenery: a solid that gets drawn
         SceneryInteractable: has a message when the player interacts with it
-            NPC: an NPC, has some dialogue, maybe some other stuff too, default bounding box
+            NPC: has a default bounding box
         Button: a button
     Item: an item that the player can collect
         Weapon: fires an Attack

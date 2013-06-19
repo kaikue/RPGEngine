@@ -1,11 +1,11 @@
 import java.awt.Image;
 import java.awt.Rectangle;
 
-
 public class Weapon extends Item {
     
     Attack attack;
     int rate; //how many frames must pass before the weapon can fire again
+    //boolean rotated = false; //whether the attack has obtained rotated images
     
     public Weapon(Image image, int x, int y, Rectangle boundingBox, Attack attack, int rate) {
         super(image, x, y, boundingBox);
@@ -13,25 +13,32 @@ public class Weapon extends Item {
         this.rate = rate;
     }
     
-    public void fire(Actor actor) {
-        int[] attackVelocity = new int[2];
+    public Attack fire(Actor actor) {
+        //if(!rotated) {
+        //    attack.rotateImage();
+        //    rotated = true;
+        //}
+        
         if(actor.dir.equals("left")) {
-            attackVelocity[0] = -1;
-            attackVelocity[1] = 0;
+            attack.velocity = Attack.LEFT;
         }
         else if(actor.dir.equals("right")) {
-            attackVelocity[0] = 1;
-            attackVelocity[1] = 0;
+            attack.velocity = Attack.RIGHT;
         }
         else if(actor.dir.equals("up")) {
-            attackVelocity[0] = 0;
-            attackVelocity[1] = -1;
+            attack.velocity = Attack.UP;
         }
         else if(actor.dir.equals("down")) {
-            attackVelocity[0] = 0;
-            attackVelocity[1] = 1;
+            attack.velocity = Attack.DOWN;
         }
-        actor.attack = new Attack(this.attack.image, actor.x, actor.y, new Rectangle(this.attack.boundingBox.x + actor.x, this.attack.boundingBox.y + actor.y, this.attack.boundingBox.width, this.attack.boundingBox.height), attackVelocity, this.attack.speed, this.attack.age, this.attack.damage, actor);
+        
+        attack.position(actor);
+        attack.age = attack.maxAge;
+        attack.creator = actor;
+        return attack;
+        //actor.attack = attack;
+        //Attack newA = new Attack(attack.image, attack.x, attack.y, new Rectangle(attack.boundingBox.x, attack.boundingBox.y, attack.boundingBox.width, attack.boundingBox.height), attackVelocity, attack.speed, attack.age, attack.damage, actor);
+        //newA.rotateImage();
+        //return newA;
     }
-
 }
