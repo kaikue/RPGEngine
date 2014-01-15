@@ -5,11 +5,8 @@ import javax.swing.ImageIcon;
 
 public class Player extends Actor {
     
-    int nextX, nextY;
     int width, height;
-    int boundingBoxOffsetX, boundingBoxOffsetY;
     boolean up, down, left, right;
-    int speed;
     Image imageSheet;
     Image imgUp, imgDown, imgLeft, imgRight;
     Image animUp1, animUp2, animDown1, animDown2, animLeft1, animLeft2, animRight1, animRight2;
@@ -19,27 +16,21 @@ public class Player extends Actor {
     int inventorySlot;
     Item inventoryItem;
     boolean canShoot;
-    long lastShot;
     
-    public Player(Image imageSheet, int x, int y, int width, int height, int speed, int imageSheetOffsetX, int imageSheetOffsetY, int health) {
-        super(x, y, new Rectangle(x, y + height * 3 / 4, width, height / 4), health);
+    public Player(Image imageSheet, int x, int y, int width, int height, int imageSheetOffsetX, int imageSheetOffsetY, int health, int speed) {
+        super(null, x, y, new Rectangle(x, y + height * 3 / 4, width, height / 4), health, speed);
         this.width = width;
-        this.height = height; 
-        this.boundingBoxOffsetX = boundingBox.x - x;
-        this.boundingBoxOffsetY = boundingBox.y - y;
+        this.height = height;
         this.up = false;
         this.down = false;
         this.left = false;
         this.right = false;
-        this.speed = speed;
-        this.dir = "down";
         this.imageSheet = imageSheet;
         this.imageSheetOffsetX = imageSheetOffsetX;
         this.imageSheetOffsetY = imageSheetOffsetY;
         ImageIcon i = new ImageIcon(this.imageSheet);
         this.imageSheetRows = i.getIconWidth() / (this.width + this.imageSheetOffsetX);
         this.imageSheetColumns = i.getIconHeight() / (this.height + this.imageSheetOffsetY);
-        //this.attack = null;
         
         //get images from spritesheet
         this.imgUp = splitImage(1);
@@ -61,13 +52,13 @@ public class Player extends Actor {
         this.inventorySlot = 0;
         this.inventoryItem = null;
         this.canShoot = true;
-        this.lastShot = 0;
     }
     
-    public void move(ArrayList<Solid> solids, RPG rpg) {
+    @Override
+    public void move(RPG rpg) {
         //find the player's next position
-        nextX = boundingBox.x;
-        nextY = boundingBox.y;
+        int nextX = boundingBox.x;
+        int nextY = boundingBox.y;
         if(up) {
             animated = true;
             nextY -= speed;
@@ -87,34 +78,22 @@ public class Player extends Actor {
         if(!up && !down && !left && !right) {
             animated = false;
         }
-        
-        //set the player's direction based on x and y change (x takes precedence)
-        if(nextX - this.boundingBox.x > 0) {
-            dir = "right";
-        }
-        else if(nextX - this.boundingBox.x < 0) {
-            dir = "left";
-        }
-        else if(nextY - this.boundingBox.y > 0) {
-            dir = "down";
-        }
-        else if(nextY - this.boundingBox.y < 0) {
-            dir = "up";
-        }
-        
-        //check if there are any collisions that will happen
-        int currentX = boundingBox.x;
-        int currentY = boundingBox.y;
-        boundingBox.setLocation(nextX, currentY);
-        for(Solid solid : solids) {
+        checkCollisions(nextX, nextY, rpg, true);
+    }
+    
+    @Override
+    public int collide(int next, int current, RPG rpg) {
+        for(Solid solid : rpg.currentLevel.allSolids) {
+            if(solid.equals(this)) {
+                continue;
+            }
             if(boundingBox.intersects(solid.boundingBox)) {
                 if(solid instanceof Scenery) {
                     if(solid instanceof LevelWarper) {
                         ((LevelWarper)solid).warp(rpg);
                         break;
                     }
-                    nextX = currentX;
-                    break;
+                    return current;
                 }
                 else if(solid instanceof Item) {
                     collect((Item)solid, rpg);
@@ -122,30 +101,7 @@ public class Player extends Actor {
                 }
             }
         }
-        boundingBox.setLocation(currentX, nextY);
-        for(Solid solid : solids) {
-            if(boundingBox.intersects(solid.boundingBox)) {
-                if(solid instanceof Scenery) {
-                    if(solid instanceof LevelWarper) {
-                        ((LevelWarper)solid).warp(rpg);
-                        break;
-                    }
-                    nextY = currentY;
-                    break;
-                }
-                else if(solid instanceof Item) {
-                    collect((Item)solid, rpg);
-                    break;
-                }
-            }
-        }
-        
-        //move the player's bounding box
-        boundingBox.setLocation(nextX, nextY);
-        
-        //move the player
-        x = boundingBox.x - boundingBoxOffsetX;
-        y = boundingBox.y - boundingBoxOffsetY;
+        return next;
     }
     
     public void collect(Item item, RPG rpg) {
@@ -162,17 +118,14 @@ public class Player extends Actor {
         else {
             inventoryItem = null;
         }
-        /*
-        if(inventoryItem instanceof Weapon) {
-            attack = ((Weapon)inventoryItem).attack;
-            attack.creator = this;
-        }
-        else {
-            attack = null;
-        }*/
     }
     
     public Image splitImage(int imgIndex) {
         return RPGUtils.splitImage(imageSheet, imageSheetRows, imageSheetColumns, width + imageSheetOffsetX, height + imageSheetOffsetY, imgIndex);
+    }
+    
+    @Override
+    public void kill(RPG rpg) {
+        rpg.quit();
     }
 }

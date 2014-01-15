@@ -14,10 +14,6 @@ public class Weapon extends Item {
     }
     
     public Attack fire(Actor actor) {
-        //if(!rotated) {
-        //    attack.rotateImage();
-        //    rotated = true;
-        //}
         
         if(actor.dir.equals("left")) {
             attack.velocity = Attack.LEFT;

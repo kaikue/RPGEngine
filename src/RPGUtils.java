@@ -72,7 +72,11 @@ public class RPGUtils {
     
     public static Image getImageFromString(String str, String start) {
         if(str.startsWith(start)) {
-            return Toolkit.getDefaultToolkit().getImage(str.substring(start.length()));
+            String sub = str.substring(start.length());
+            if(sub.equals("null")) {
+                return null;
+            }
+            return Toolkit.getDefaultToolkit().getImage(sub);
         }
         System.out.println("Could not find '" + start + "' in string, defaulting to null");
         return null;

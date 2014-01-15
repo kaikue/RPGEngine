@@ -37,16 +37,18 @@ public class Level {
             if(solids[i].startsWith("begin ")) {
                 if(solids[i+1].startsWith("class = ")) {
                     className = solids[i+1].substring(8);
+                    
+                    //now entering the wall of parameters. proceed at your own risk.
                     if(className.equals("Player")) {
                         String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
-                        Image playerImage = RPGUtils.getImageFromString(solids[i+2], "image = ");
-                        int playerWidth = RPGUtils.getIntFromString(solids[i+3], "width = ");
-                        int playerHeight = RPGUtils.getIntFromString(solids[i+4], "height = ");
-                        int playerSpeed = RPGUtils.getIntFromString(solids[i+5], "speed = ");
-                        int playerSheetOffsetX = RPGUtils.getIntFromString(solids[i+6], "sheetOffsetX = ");
-                        int playerSheetOffsetY = RPGUtils.getIntFromString(solids[i+7], "sheetOffsetY = ");
-                        int playerHealth = RPGUtils.getIntFromString(solids[i+8], "health = ");
-                        player = new Player(playerImage, 0, 0, playerWidth, playerHeight, playerSpeed, playerSheetOffsetX, playerSheetOffsetY, playerHealth);
+                        Image image = RPGUtils.getImageFromString(solids[i+2], "image = ");
+                        int width = RPGUtils.getIntFromString(solids[i+3], "width = ");
+                        int height = RPGUtils.getIntFromString(solids[i+4], "height = ");
+                        int sheetOffsetX = RPGUtils.getIntFromString(solids[i+5], "sheetOffsetX = ");
+                        int sheetOffsetY = RPGUtils.getIntFromString(solids[i+6], "sheetOffsetY = ");
+                        int health = RPGUtils.getIntFromString(solids[i+7], "health = ");
+                        int speed = RPGUtils.getIntFromString(solids[i+8], "speed = ");
+                        player = new Player(image, 0, 0, width, height, sheetOffsetX, sheetOffsetY, health, speed);
                         rpg.solidDefs.put(letter, player);
                     }
                     else if(className.equals("Scenery")) {
@@ -154,7 +156,23 @@ public class Level {
                         int boundingBoxX = RPGUtils.getIntFromString(solids[i+5], "boundingBoxX = ");
                         int boundingBoxY = RPGUtils.getIntFromString(solids[i+6], "boundingBoxY = ");
                         int health = RPGUtils.getIntFromString(solids[i+7], "health = ");
-                        Enemy enemy = new Enemy(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), health);
+                        int speed = RPGUtils.getIntFromString(solids[i+8], "speed = ");
+                        String type = RPGUtils.getSubstringFromString(solids[i+9], "type = ");
+                        //enemy attack
+                        Image attackImage = RPGUtils.getImageFromString(solids[i+10], "attackImage = ");
+                        int attackBBW = RPGUtils.getIntFromString(solids[i+11], "attackBBW = ");
+                        int attackBBH = RPGUtils.getIntFromString(solids[i+12], "attackBBH = ");
+                        int attackBBX = RPGUtils.getIntFromString(solids[i+13], "attackBBX = ");
+                        int attackBBY = RPGUtils.getIntFromString(solids[i+14], "attackBBY = ");
+                        int attackSpeed = RPGUtils.getIntFromString(solids[i+15], "attackSpeed = ");
+                        int attackAge = RPGUtils.getIntFromString(solids[i+16], "attackAge = ");
+                        int attackDamage = RPGUtils.getIntFromString(solids[i+17], "attackDamage = ");
+                        int attackKnockback = RPGUtils.getIntFromString(solids[i+18], "attackKnockback = ");
+                        int rate = RPGUtils.getIntFromString(solids[i+19], "rate = ");
+                        int[] attackVelocity = {0, 0};
+                        Attack attack = new Attack(attackImage, 0, 0, new Rectangle(attackBBX, attackBBY, attackBBW, attackBBH), attackVelocity, attackSpeed, attackAge, attackDamage, attackKnockback, null);
+                        Weapon weapon = new Weapon(null, 0, 0, null, attack, rate);
+                        Enemy enemy = new Enemy(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), health, speed, type, weapon);
                         rpg.solidDefs.put(letter, enemy);
                     }
                     else if(className.equals("Weapon")) {
@@ -173,8 +191,9 @@ public class Level {
                         int attackSpeed = RPGUtils.getIntFromString(solids[i+13], "attackSpeed = ");
                         int attackAge = RPGUtils.getIntFromString(solids[i+14], "attackAge = ");
                         int attackDamage = RPGUtils.getIntFromString(solids[i+15], "attackDamage = ");
+                        int attackKnockback = RPGUtils.getIntFromString(solids[i+16], "attackKnockback = ");
                         int[] attackVelocity = {0, 0};
-                        Attack attack = new Attack(attackImage, 0, 0, new Rectangle(attackBBX, attackBBY, attackBBW, attackBBH), attackVelocity, attackSpeed, attackAge, attackDamage, null);
+                        Attack attack = new Attack(attackImage, 0, 0, new Rectangle(attackBBX, attackBBY, attackBBW, attackBBH), attackVelocity, attackSpeed, attackAge, attackDamage, attackKnockback, null);
                         Weapon weapon = new Weapon(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), attack, rate);
                         rpg.solidDefs.put(letter, weapon);
                     }
@@ -215,6 +234,17 @@ public class Level {
                         int boundingBoxY = RPGUtils.getIntFromString(solids[i+7], "boundingBoxY = ");
                         Transparency transparency = new Transparency(new Rectangle(0, 0, drawSpaceWidth, drawSpaceHeight), new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight));
                         rpg.solidDefs.put(letter, transparency);
+                    }
+                    else if(className.equals("HealthPotion")) {
+                        String letter = RPGUtils.getSubstringFromString(solids[i], "begin ");
+                        Image image = RPGUtils.getImageFromString(solids[i+2], "image = ");
+                        int boundingBoxWidth = RPGUtils.getIntFromString(solids[i+3], "boundingBoxWidth = ");
+                        int boundingBoxHeight = RPGUtils.getIntFromString(solids[i+4], "boundingBoxHeight = ");
+                        int boundingBoxX = RPGUtils.getIntFromString(solids[i+5], "boundingBoxX = ");
+                        int boundingBoxY = RPGUtils.getIntFromString(solids[i+6], "boundingBoxY = ");
+                        int health = RPGUtils.getIntFromString(solids[i+7], "health = ");
+                        HealthPotion healthPotion = new HealthPotion(image, 0, 0, new Rectangle(boundingBoxX, boundingBoxY, boundingBoxWidth, boundingBoxHeight), health);
+                        rpg.solidDefs.put(letter, healthPotion);
                     }
                     //more object types...
                 }
@@ -259,12 +289,16 @@ public class Level {
                         Weapon weapon = new Weapon(((Weapon)solid).image, j * rpg.tileSize, i * rpg.tileSize, new Rectangle(solid.boundingBox.x + j * rpg.tileSize, solid.boundingBox.y + i * rpg.tileSize, solid.boundingBox.width, solid.boundingBox.height), ((Weapon)solid).attack, ((Weapon)solid).rate);
                         allSolids.add(weapon);
                     }
+                    else if(solid instanceof HealthPotion) {
+                        HealthPotion healthPotion = new HealthPotion(((HealthPotion)solid).image, j * rpg.tileSize, i * rpg.tileSize, new Rectangle(solid.boundingBox.x + j * rpg.tileSize, solid.boundingBox.y + i * rpg.tileSize, solid.boundingBox.width, solid.boundingBox.height), ((HealthPotion)solid).health);
+                        allSolids.add(healthPotion);
+                    }
                     else if(solid instanceof Item) {
                         Item item = new Item(((Item)solid).image, j * rpg.tileSize, i * rpg.tileSize, new Rectangle(solid.boundingBox.x + j * rpg.tileSize, solid.boundingBox.y + i * rpg.tileSize, solid.boundingBox.width, solid.boundingBox.height));
                         allSolids.add(item);
                     }
                     else if(solid instanceof Enemy) {
-                        Enemy enemy = new Enemy(((Enemy)solid).image, j * rpg.tileSize, i * rpg.tileSize, new Rectangle(solid.boundingBox.x + j * rpg.tileSize, solid.boundingBox.y + i * rpg.tileSize, solid.boundingBox.width, solid.boundingBox.height), ((Enemy)solid).health);
+                        Enemy enemy = new Enemy(((Enemy)solid).image, j * rpg.tileSize, i * rpg.tileSize, new Rectangle(solid.boundingBox.x + j * rpg.tileSize, solid.boundingBox.y + i * rpg.tileSize, solid.boundingBox.width, solid.boundingBox.height), ((Enemy)solid).health, ((Enemy)solid).speed, ((Enemy)solid).type, ((Enemy)solid).weapon);
                         allSolids.add(enemy);
                     }
                     else if(solid instanceof Button) {
@@ -325,6 +359,13 @@ public class Level {
             }
             else {
                 solid.draw(g);
+                if(solid instanceof Enemy) {
+                    //draw enemy health
+                    g.setColor(Color.RED);
+                    g.fillRect(solid.x + solid.image.getWidth(null) / 2 - 50, solid.y + solid.image.getHeight(null) + 20, 100, 20);
+                    g.setColor(Color.GREEN);
+                    g.fillRect(solid.x + solid.image.getWidth(null) / 2 - 50, solid.y + solid.image.getHeight(null) + 20, (int)(100.0 * ((Enemy)solid).health / ((Enemy)solid).maxHealth), 20);
+                }
             }
             
             //debug- draw bounding boxes

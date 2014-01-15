@@ -5,10 +5,10 @@ class = Player
 image = data/images/knightsheetmedium.png
 width = 72
 height = 144
-speed = 4
 sheetOffsetX = 8
 sheetOffsetY = 8
 health = 100
+speed = 4
 
 begin K
 class = NPC
@@ -39,3 +39,24 @@ boundingBoxWidth = 0
 boundingBoxHeight = 0
 boundingBoxX = 0
 boundingBoxY = 0
+
+begin E
+class = Enemy
+image = data/images/slimelarge.png
+boundingBoxWidth = 160
+boundingBoxHeight = 104
+boundingBoxX = 0
+boundingBoxY = 0
+health = 50
+speed = 4
+type = collide-linear
+attackImage = null
+attackBBW = 180
+attackBBH = 124
+attackBBX = -10
+attackBBY = -10
+attackSpeed = 0
+attackAge = 0
+attackDamage = 20
+attackKnockback = 10
+rate = 30

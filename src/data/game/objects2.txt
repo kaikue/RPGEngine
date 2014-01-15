@@ -5,10 +5,10 @@ class = Player
 image = data/images/knightsheetmedium.png
 width = 72
 height = 144
-speed = 4
 sheetOffsetX = 8
 sheetOffsetY = 8
 health = 100
+speed = 4
 
 begin B
 class = Scenery

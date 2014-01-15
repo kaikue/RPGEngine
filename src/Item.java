@@ -10,10 +10,12 @@ public class Item extends Solid {
         super(x, y, boundingBox);
         this.image = image;
     }
+    
     public void draw(Graphics g) {
-        
         g.drawImage(image, x, y, null);
-        
     }
     
+    public void use(Actor a) {
+        //can be overridden in subclasses
+    }
 }

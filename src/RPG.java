@@ -3,12 +3,11 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.*;
-
 import javax.swing.ImageIcon;
 
 public class RPG extends Applet implements Runnable, MouseListener, KeyListener {
     
-    static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     static final int LOADING = -1;
     static final int MENU = 0;
     static final int PAUSE = 1;
@@ -23,7 +22,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     Thread t;
     Player player;
     double interactionDistance;
-    Image offscreenImage;
+    BufferedImage offscreenImage;
     int tileSize;
     Graphics offscr;
     Image imgDialogBG, imgInventoryBG, imgItemSelected, imgLoading;
@@ -49,8 +48,6 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     java.awt.Button inputButton;
     
     public void init() {
-        t = new Thread(this);
-        t.start();
         setFocusable(true);
         requestFocus();
         
@@ -127,13 +124,17 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         pauseScreen.createObjects(this);
         
         currentLevel = levels.get(0);
-        offscreenImage = createImage(currentLevel.width, currentLevel.height);
+        //offscreenImage = createImage(currentLevel.width, currentLevel.height);
+        offscreenImage = new BufferedImage(appWidth, appHeight, BufferedImage.TYPE_INT_RGB);
         offscr = offscreenImage.getGraphics();
         player = currentLevel.player;
         setLayout(null);
         
         addMouseListener(this);
         addKeyListener(this);
+        
+        t = new Thread(this);
+        t.start();
     }
     
     public void talk() {
@@ -228,6 +229,12 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         remove(text);
         remove(inputButton);
         gameState = prevState;
+        //why doesn't this work?
+        //updatePlayerMove();
+        //player.left = false;
+        //player.up = false;
+        //player.right = false;
+        //player.down = false;
     }
     
     public void nextLevel(boolean keepInventory) {
@@ -250,19 +257,22 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     
     public void switchLevel(int levelIndex, boolean keepInventory) {
         ArrayList<Item> oldInv = null;
+        int oldHealth = 0;
         if(player != null) {
             oldInv = player.inventory;
+            oldHealth = player.health;
         }
         currentLevel.bgMusic.stop();
         currentLevel = levels.get(levelIndex);
         //currentLevel.bgMusic.loop(); //?
+        
         //reset the level
         if(!currentLevel.visited) {
             currentLevel.learnSolids(solidsData[levelIndex], this); //note: if you remove this, really weird stuff happens
             currentLevel.createObjects(this);
             currentLevel.visited = true;
         }
-        offscreenImage = createImage(currentLevel.width, currentLevel.height);
+        offscreenImage = new BufferedImage(currentLevel.width, currentLevel.height, BufferedImage.TYPE_INT_RGB);
         offscr = offscreenImage.getGraphics();
         currentLevel.bgMusic.loop();
         player = currentLevel.player;
@@ -270,6 +280,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             gameState = GAME;
             if(keepInventory) {
                 player.inventory = oldInv;
+                player.health = oldHealth;
                 player.updateHeldItem();
             }
         }
@@ -284,12 +295,8 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         currentLevel.bgMusic.stop();
         prevLevel = currentLevel;
         currentLevel = pauseScreen;
-        offscreenImage = createImage(currentLevel.width, currentLevel.height);
+        offscreenImage = new BufferedImage(currentLevel.width, currentLevel.height, BufferedImage.TYPE_INT_RGB);
         offscr = offscreenImage.getGraphics();
-        player.left = false;
-        player.up = false;
-        player.right = false;
-        player.down = false;
         player = null;
         //currentLevel.bgMusic.loop();
     }
@@ -298,7 +305,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         gameState = prevState;
         //currentLevel.bgMusic.stop();
         currentLevel = prevLevel;
-        offscreenImage = createImage(currentLevel.width, currentLevel.height);
+        offscreenImage = new BufferedImage(currentLevel.width, currentLevel.height, BufferedImage.TYPE_INT_RGB);
         offscr = offscreenImage.getGraphics();
         player = currentLevel.player;
         //currentLevel.bgMusic.loop();
@@ -332,18 +339,10 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         return false;
     }
     
-    public void attack() {
-        //use the player's current item (only usable items are weapons right now)
-        if(player.inventoryItem != null && player.inventoryItem instanceof Weapon && time - player.lastShot > ((Weapon)player.inventoryItem).rate) {
-            Attack attack = ((Weapon)player.inventoryItem).fire(player);
-            currentLevel.allSolids.add(attack);
-            player.lastShot = time;
-        }
-    }
-    
-    public AudioClip getAudioClipFromString(String str, String start) {
+    public static AudioClip getAudioClipFromString(String str, String start) {
         if(str.startsWith(start)) {
-            return getAudioClip(getCodeBase(), str.substring(start.length()));
+            //return getAudioClip(getCodeBase(), str.substring(start.length()));
+            return Applet.newAudioClip(RPG.class.getResource(str.substring(start.length())));
             /*
             try {
                 return Applet.newAudioClip(new URL(str.substring(start.length())));
@@ -396,8 +395,9 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
     public void paint(Graphics g) {
         offscr.setFont(font);
         if(gameState == LOADING) {
+            new ImageIcon(imgLoading);
             g.drawImage(imgLoading, 0, 0, null); //do I really need this?
-            offscr.drawString("", 0, 0); //loads the font, I'm not sure how else to do it
+            offscr.drawString("", 0, 0); //loads the font
             offscr.clearRect(0, 0, appWidth, appHeight);
             gameState = MENU;
         }
@@ -525,9 +525,7 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
         time++;
         pos = getLocationOnScreen();
         if(gameState == GAME) {
-            //move the player
             updatePlayerMove();
-            player.move(currentLevel.allSolids, this);
             
             //remove necessary Solids
             ArrayList<Solid> toRemove = new ArrayList<Solid>();
@@ -541,7 +539,9 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
                         if(attack.boundingBox.intersects(solid2.boundingBox)) {
                             if(solid2 instanceof Actor) {
                                 if(!attack.creator.equals(solid2)) {
+                                    //hurt the actor
                                     ((Actor)solid2).health -= attack.damage;
+                                    ((Actor)solid2).knockback = findKnockback(attack.knockback, (int)attack.boundingBox.getCenterX(), (int)attack.boundingBox.getCenterY(), (int)solid2.boundingBox.getCenterX(), (int)solid2.boundingBox.getCenterY());
                                     toRemove.add(attack);
                                 }
                             }
@@ -551,15 +551,17 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
                         }
                     }
                 }
-                //kill necessary Actors
-                if(solid instanceof Actor) {
+                
+                else if(solid instanceof Actor) {
+                    ((Actor)solid).update(this);
+                    
                     if(((Actor)solid).killMe()) {
                         toRemove.add(solid);
                     }
                 }
             }
             for(Solid removeMe : toRemove) {
-                currentLevel.allSolids.remove(removeMe);
+                removeMe.kill(this);
             }
             
             //move the view
@@ -579,26 +581,38 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             }
             
             if(spacePressed) {
-                if(!messageAdvanced) {
-                    if(!interact()) {
-                        attack();
-                    }
-                }
-                else {
-                    attack();
+                if((!messageAdvanced && !interact()) || messageAdvanced) {
+                    player.attack(this);
                 }
             }
         }
-        else if(gameState == TALK) {
+        else if(gameState == INVENTORY || gameState == INPUT || gameState == TALK) {
             updatePlayerMove();
-            if(spacePressed &&!messageAdvanced) {
-                talk();
+            if(gameState == TALK) {
+                if(spacePressed &&!messageAdvanced) {
+                    talk();
+                }
             }
-        }
-        else if(gameState == INVENTORY || gameState == INPUT) {
-            updatePlayerMove();
         }
         paint(g);
+    }
+    
+    public static int[] findKnockback(int strength, int x1, int y1, int x2, int y2) {
+        //from (x1, y1) towards (x2, y2)
+        //thanks to http://www.fundza.com/vectors/normalize/
+        
+        //find base and height of vector
+        double base = x2 - x1;
+        double height = y2 - y1;
+        //scale to out of 1
+        double hypot = Math.sqrt(Math.pow(base, 2) + Math.pow(height, 2));
+        base /= hypot;
+        height /= hypot;
+        //scale to strength
+        base *= strength;
+        height *= strength;
+        int[] vector = {(int)base, (int)height};
+        return vector;
     }
     
     @Override
@@ -714,34 +728,34 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
             break;
         */
         case KeyEvent.VK_1:
-            invSelect(0, true);
+            invSelect(0, false);
             break;
         case KeyEvent.VK_2:
-            invSelect(1, true);
+            invSelect(1, false);
             break;
         case KeyEvent.VK_3:
-            invSelect(2, true);
+            invSelect(2, false);
             break;
         case KeyEvent.VK_4:
-            invSelect(3, true);
+            invSelect(3, false);
             break;
         case KeyEvent.VK_5:
-            invSelect(4, true);
+            invSelect(4, false);
             break;
         case KeyEvent.VK_6:
-            invSelect(5, true);
+            invSelect(5, false);
             break;
         case KeyEvent.VK_7:
-            invSelect(6, true);
+            invSelect(6, false);
             break;
         case KeyEvent.VK_8:
-            invSelect(7, true);
+            invSelect(7, false);
             break;
         case KeyEvent.VK_9:
-            invSelect(8, true);
+            invSelect(8, false);
             break;
         case KeyEvent.VK_0:
-            invSelect(9, true);
+            invSelect(9, false);
             break;
         default:
             break;
@@ -796,26 +810,36 @@ public class RPG extends Applet implements Runnable, MouseListener, KeyListener 
 /*
 Issues to fix:
 Player side animation needs improvement
-Loading screen takes too long to load
-    Remove loading screen image? it just loads the font
-Player draws on top when at very bottom (player.speed-sized border at the bottom?)
+Remove loading screen image? it just loads the font
 Multiple codes and effects for one input box
-Remove Overlays, CombatScreen
+Remove CombatScreen, Overlay?
     MessageOverlay is the only overlay used and there's only 1, everything else can just be Scenery
-Attacks don't destroy when colliding with Solids
 Make the audio creation function static
-Attacks draw below those who created them
-    make boundingbox below creator's?
+Spamming attack while walking through doors can break them (maybe? can't reproduce this)
+Pressing key while talking, then releasing during input makes player keep moving (focus issue?)
+Should Attacks not destroy when hitting Solids?
+    fighting near walls is kinda annoying
+    just destroy when out of room
+    only check for collisions if speed != 0?
+Test enemy activation distance
+Can't have multiple Attacks from one Actor
+    Create copy in Weapon.fire()
+
+Features needed:
+Save & load game
+Embed in website or make fully standalone
+Things that display MessageOverlays when collided (for cutscenes)
 
 Notes:
 allOverlays does not include currentMessage (I didn't add it)
 Inventory
     slots 1 through 9 are items, slot 0 is always blank (for holding nothing)
-    note: actual slot number is one less than the number told to the player (to match up with keyboard)
+    actual slot number is one less than the number told to the player (to match up with keyboard)
 Attack rate should be at least age to prevent multiple melee weapons appearing at once
-Attacks appear for a second when spawned over a Solid (on create, check if collision?)
+There's an invisible Solid at the top of the screen to prevent player sticking his head offscreen
+    don't put anything mobile there
 
-Features to add:
+Features that would be nice:
 Inventory
     press up to open expanded inventory for that slot
         if you select an item already in the slot, switch items with that slot
@@ -831,7 +855,6 @@ Make NPCs Actors? (so that they can be killed, "showing" them a sword could kill
 Sounds for items
 Give Items a separate image for inventory appearance?
 Instructions, settings, credits
-Real loading screen
 Resolution?
 Cutscenes somehow...
     would involve NPCs and player being told to move wherever
@@ -840,25 +863,25 @@ Cutscenes somehow...
     could appear on start of level, interaction with SceneryInteractables 
 Make text in MessageOverlays appear over time, also wrap around
 Make parsing of .txt's more lenient (stuff can be on any line)
-Save & load game
-Enemy AI
+More enemy AIs
+Doors (SceneryInteractable?) and keys (Item)
 
 Classes: (redo this, outdated)
 RPG: the game itself
 Solid: any object that the player can collide with                              RPG has a list of these
-    Actor: enemies or the player
-        Player: the player
-        Enemy: an enemy
     Scenery: a solid that gets drawn
         SceneryInteractable: has a message when the player interacts with it
             NPC: has a default bounding box
-        Button: a button
+        Button: can be clicked
+        Actor: enemies or the player
+            Player: the player
+            Enemy: an enemy
     Item: an item that the player can collect
         Weapon: fires an Attack
-    Attack: hurts any Actor who did not create it, has a velocity               Attack has a list of these
+    Attack: hurts any Actor who did not create it, has a velocity
 Level: a level or GUI menu
 Overlay: gets drawn above the solids (ex: fog)                                  RPG has a list of these
-    note: just using solids w/out boundingbox is easier if you don't need them to be on top
+    just use solids with boundingboxes below the level?
     MessageOverlay: shows a portrait and some text (ex: dialogue)
 SolidComparator: for sorting based on y-position, don't forget to reverse the sorted ArrayList
 */

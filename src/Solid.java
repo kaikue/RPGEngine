@@ -17,4 +17,8 @@ public abstract class Solid {
     public void draw(Graphics g) {
         g.drawImage(image, x, y, null);
     }
+
+    public void kill(RPG rpg) {
+        rpg.currentLevel.allSolids.remove(this);
+    }
 }
