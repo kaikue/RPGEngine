@@ -9,3 +9,7 @@ bin/
 .settings/
 .classpath
 .project
+.project
+.settings
+bin
+.classpath
