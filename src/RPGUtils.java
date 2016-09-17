@@ -26,7 +26,7 @@ public class RPGUtils {
         while(reader.hasNext()) {
             data += reader.next() + "\n";
         }
-        
+        reader.close();
         return data.split("\\r?\\n");
     }
     
